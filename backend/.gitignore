@@ -1,0 +1,4 @@
+db.sqlite3
+.idea/
+backend/__pycache__/
+tsfinder/__pycache__/
