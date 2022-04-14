@@ -22,6 +22,13 @@ This adds all necessary models to the database
 
 `python manage.py runserver [port]`
 
+## API Doc
+
+Documentation for all available API Endpoints can be accessed with
+
+    Method: GET
+    URL: /api/docs
+
 ## Quickstart
 
 ### 1. Create admin user
@@ -35,7 +42,7 @@ Necessary to access admin interface
 At the endpoint below you can access the admin interface and create new users. 
 
     Method: GET
-    Endpoint: /admin
+    URL: /admin
 
 A user can be used to authenticate in the API.
 
@@ -44,7 +51,7 @@ A user can be used to authenticate in the API.
 At the endpoint below you can login as any created user
 
     Method: POST
-    Endpoint: /api/authentication/login
+    URL: /api/authentication/login
     Body: { 
         "username": [username], 
         "password": [password] 
@@ -53,4 +60,4 @@ At the endpoint below you can login as any created user
 And check the login status at
 
     Method: GET
-    Endpoint: /api/authentication/status
+    URL: /api/authentication/status
