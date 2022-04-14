@@ -1,4 +1,8 @@
 db.sqlite3
 .idea/
+admindata
+
+
 backend/__pycache__/
-tsfinder/__pycache__/
+apps/__pycache__/
+apps/*/__pycache__/
