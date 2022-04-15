@@ -27,4 +27,4 @@ def login(request, user: UserSchema):
 @router.get('/status')
 def status(request):
     requestLogger.info('Login status check: ' + request.user.username, extra={'request': request})
-    return 'You are logged in as ' + request.user.username
+    return HttpResponse('You are logged in as ' + request.user.username, status=200)
