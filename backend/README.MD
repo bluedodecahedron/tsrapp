@@ -24,7 +24,7 @@ This adds all necessary models to the database
 
 ## API Doc
 
-Documentation for all available API Endpoints can be accessed with
+Documentation for all available Ninja API Endpoints can be accessed with
 
     Method: GET
     URL: /api/docs

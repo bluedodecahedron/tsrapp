@@ -1,18 +1,19 @@
-import django.contrib.auth as auth
-import apps.authentication.schemas as schemas
+import logging
 
 from ninja import Router
 from django.http import HttpResponse
+from app.apps.authentication.schemas import UserSchema
+from django.contrib import auth
 
+requestLogger = logging.getLogger('django.request')
 router = Router()
 
 
 @router.post('/login', auth=None)
-def login(request, user: schemas.User):
+def login(request, user: UserSchema):
+    requestLogger.info('User login: ' + user.__str__(), extra={'request': request})
     if request.user.is_authenticated:
         return HttpResponse('User already logged in', status=403)
-
-    print(user.username, user.password)
 
     user = auth.authenticate(request, username=user.username, password=user.password)
 
@@ -25,4 +26,5 @@ def login(request, user: schemas.User):
 
 @router.get('/status')
 def status(request):
+    requestLogger.info('Login status check: ' + request.user.username, extra={'request': request})
     return 'You are logged in as ' + request.user.username

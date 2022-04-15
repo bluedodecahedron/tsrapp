@@ -1,8 +1,12 @@
-db.sqlite3
+storage/*
+
 .idea/
 admindata
 
-
 backend/__pycache__/
-apps/__pycache__/
-apps/*/__pycache__/
+app/__pycache__/
+app/util/__pycache__/
+app/apps/__pycache__/
+app/apps/*/__pycache__/
+
+

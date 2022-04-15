@@ -10,10 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
+import os
+import logging
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+STORAGE_DIR = BASE_DIR / 'storage'
 
 
 # Quick-start development settings - unsuitable for production
@@ -23,9 +26,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-awi#y8kc9yo&5pk(y751o(-*a&+v565ot_)dx(p-9#gqni27+4'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '193.80.5.192',
+    'localhost',
+]
 
 
 # Application definition
@@ -77,7 +83,7 @@ TEMPLATES = [
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': STORAGE_DIR / 'db.sqlite3',
     }
 }
 
@@ -100,6 +106,71 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+LOGGING = {
+    'version': 1,  # the dictConfig format version
+    'disable_existing_loggers': False,  # retain the default loggers
+    'formatters': {
+        'backend': {
+            'format': '[{asctime}] - {levelname} - {threadName}({thread}) - {message}',
+            'style': '{',
+            'datefmt': '%d/%m/%Y %H:%M:%S',
+        },
+        'request_format': {
+            'format': '[{asctime}] - {levelname} - {threadName}({thread}) - Request: {message} (IP: {ip})',
+            'style': '{',
+            'datefmt': '%d/%m/%Y %H:%M:%S',
+        },
+    },
+    'handlers': {
+        'backend_file': {
+            'class': 'logging.FileHandler',
+            'filename': STORAGE_DIR / 'backend.log',
+            'formatter': 'backend',
+        },
+        'backend_console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'backend',
+        },
+        'request_file': {
+            'class': 'logging.FileHandler',
+            'filename': STORAGE_DIR / 'backend.log',
+            'formatter': 'request_format',
+        },
+        'request_console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'request_format',
+        },
+    },
+    'filters': {
+        'add_ip_address': {
+            '()': 'app.util.logfilters.IPAddressFilter'
+        }
+    },
+    'loggers': {
+        'backend': {
+            'handlers': ['backend_file', 'backend_console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['backend_file', 'backend_console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['request_file', 'request_console'],
+            'filters': ['add_ip_address'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'django.server': {
+            'handlers': ['request_file', 'request_console'],
+            'filters': ['add_ip_address'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
@@ -122,3 +193,4 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+

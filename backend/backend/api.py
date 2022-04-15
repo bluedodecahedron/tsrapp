@@ -1,5 +1,5 @@
 from ninja import NinjaAPI
-from apps.authentication.api import router as authentication_router
+from app.apps.authentication.api import router as authentication_router
 from django.http import HttpResponse
 
 
