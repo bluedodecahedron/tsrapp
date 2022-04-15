@@ -1,4 +1,5 @@
-storage/*
+storage/backend.log
+storage/db.sqlite3
 
 .idea/
 admindata
