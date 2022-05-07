@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'mod_wsgi.server',
 ]
 
 MIDDLEWARE = [
@@ -75,7 +76,7 @@ TEMPLATES = [
     },
 ]
 
-# WSGI_APPLICATION = 'backend.wsgi.application'
+WSGI_APPLICATION = 'backend.wsgi.application'
 
 
 # Database

@@ -1,5 +1,6 @@
 from ninja import NinjaAPI
 from app.apps.authentication.api import router as authentication_router
+from app.apps.tsdr.api import router as tsdr_router
 from django.http import HttpResponse
 
 
@@ -12,6 +13,7 @@ def authenticate(request):
 
 api = NinjaAPI(auth=authenticate)
 api.add_router('/authentication/', authentication_router)
+api.add_router('/tsdr/', tsdr_router)
 
 
 @api.get('/index', auth=None)
