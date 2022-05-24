@@ -1,0 +1,3 @@
+[submodule "tsdyolox"]
+	path = tsdyolox
+	url = git@github.com:bluedodecahedron/tsdyolox.git
