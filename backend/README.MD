@@ -2,62 +2,69 @@
 
 ## Installation
 
-### 1. Install Dependencies
+### 1. Install package dependencies
 
-Django provides the backend architecture for the project
+This project uses the following python packages:
+* django: Django provides the backend architecture for the project
+* django-ninja: Django ninja provides REST API support for django
+* mod-wsgi: For future apache server support
 
-`pip install django`
+Install them using the command
 
-Django ninja provides REST API support for django
+`pip install -r requirements.txt`
 
-`pip install django-ninja`
+### 2. Install yoloX
 
-### 2. Build database
+The object detection algorithm used in this project is yoloX. A customized fork of the original yoloX github project is included in this project as a submodule.
 
-This adds all necessary models to the database
+YoloX needs to be installed in the active python environment in order for the detection to work. Navigate to the submodule folder and follow the installation instructions given there in the README.
+
+### 3. Build database
+
+This command adds all django models to the database that are necessary to use the backend
 
 `python manage.py migrate`
 
-### 3. Start the backend server
+### 4. Start the backend server
+
+This command will start the backend server
 
 `python manage.py runserver [port]`
 
 ## API Doc
 
-Documentation for all available Ninja API Endpoints can be accessed with
+Documentation for all API Endpoints is available at
 
-    Method: GET
-    URL: /api/docs
+`localhost:[port]/api/docs`
 
 ## Quickstart
 
 ### 1. Create admin user
 
-Necessary to access admin interface
+In order to access the admin interface, an admin user needs to be created first.
 
 `python manage.py createsuperuser --username=[username] --email=[email]`
 
 ### 2. Create new user
 
-At the endpoint below you can access the admin interface and create new users. 
+To create a new user, log into the admin interface with the newly created admin at
 
-    Method: GET
-    URL: /admin
+`localhost:[port]/admin`
 
-A user can be used to authenticate in the API.
+### 3. User login
 
-### 3. Login user
+To execute a login request, open the API docs at /api/docs. Then execute the login endpoint below.
 
-At the endpoint below you can login as any created user
+`POST /api/authentication/login`
 
-    Method: POST
-    URL: /api/authentication/login
-    Body: { 
-        "username": [username], 
-        "password": [password] 
-    }
+Checking the logging status can be done with
 
-And check the login status at
+`GET /api/authentication/status`
 
-    Method: GET
-    URL: /api/authentication/status
+### 4. Traffic sign detection
+
+When logged in as an existing user, traffic sign detection can also be done within the API docs. Use the endpoint below to upload an image for traffic sign detection.
+
+`POST api/tsdr/trafficimg`
+
+When successful, the request returns box coordinates of the detected traffic signs within the image. It also creates an image visualizing the result in the folder storage/tsd

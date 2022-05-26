@@ -11,12 +11,9 @@ router = Router()
 
 
 @router.post('/trafficimg')
-def login(request, image_file: UploadedFile = File(...)):
+def traffic_sign_detection(request, image_file: UploadedFile = File(...)):
     requestLogger.info('tsdr traffic image: ' + image_file.name + ', bytesize: ' + str(image_file.size), extra={'request': request})
 
-    if services.tsd(image_file) == 0:
-        return HttpResponse('Test success', status=200)
-    else:
-        return HttpResponse('Test fail', status=200)
+    return services.tsd(image_file)
 
 
