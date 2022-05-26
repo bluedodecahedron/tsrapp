@@ -1,9 +1,11 @@
 storage/backend.log
 storage/db.sqlite3
+storage/tsd
 
 .idea/
 admindata
 
+__pycache__/
 backend/__pycache__/
 app/__pycache__/
 app/util/__pycache__/
