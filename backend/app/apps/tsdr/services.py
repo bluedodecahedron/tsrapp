@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import logging
 import os
-import time
+from datetime import datetime
 
 
 logger = logging.getLogger('backend')
@@ -33,7 +33,8 @@ predictor = get_tsd_predictor()
 def save_result(result_image):
     save_folder = 'storage/tsd'
     os.makedirs(save_folder, exist_ok=True)
-    save_file_name = os.path.join(save_folder, time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()) + '.jpg')
+    time_now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")[:-3]
+    save_file_name = os.path.join(save_folder, time_now + '.jpg')
     logger.info("Saving detection result in {}".format(save_file_name))
     cv2.imwrite(save_file_name, result_image)
 

@@ -17,3 +17,10 @@ def traffic_sign_detection(request, image_file: UploadedFile = File(...)):
     return services.tsd(image_file)
 
 
+@router.post('/test', auth=None)
+def test(request):
+    requestLogger.info('test')
+
+    return 0
+
+
