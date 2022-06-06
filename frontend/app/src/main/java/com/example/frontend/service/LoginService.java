@@ -1,20 +1,16 @@
 package com.example.frontend.service;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.widget.Toast;
 
+import com.example.frontend.schema.UserSchema;
 import com.example.frontend.service.client.API;
 import com.example.frontend.service.client.RetrofitClient;
-import com.example.frontend.schema.UserSchema;
 import com.example.frontend.util.NetworkMeasures;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.function.Consumer;
 
 import okhttp3.ResponseBody;

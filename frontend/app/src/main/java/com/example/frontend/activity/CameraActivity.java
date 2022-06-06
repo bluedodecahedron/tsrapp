@@ -1,14 +1,5 @@
 package com.example.frontend.activity;
 
-import android.content.Context;
-import android.content.ContextWrapper;
-import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.ImageFormat;
-import android.graphics.Rect;
-import android.graphics.YuvImage;
-import android.media.Image;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
@@ -29,27 +20,14 @@ import androidx.lifecycle.LifecycleOwner;
 
 import com.example.frontend.R;
 import com.example.frontend.service.TsdrService;
-import com.example.frontend.service.client.API;
-import com.example.frontend.service.client.RetrofitClient;
 import com.example.frontend.util.NetworkMeasures;
 import com.google.common.util.concurrent.ListenableFuture;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
-import retrofit2.Call;
-import retrofit2.Callback;
 import retrofit2.Response;
 
 @ExperimentalGetImage

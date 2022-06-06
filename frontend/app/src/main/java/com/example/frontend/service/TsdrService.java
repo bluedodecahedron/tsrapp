@@ -1,15 +1,7 @@
 package com.example.frontend.service;
 
 import android.content.Context;
-import android.content.ContextWrapper;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.ImageFormat;
-import android.graphics.Rect;
-import android.graphics.YuvImage;
-import android.media.Image;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.camera.core.ExperimentalGetImage;
 import androidx.camera.core.ImageProxy;
@@ -19,17 +11,10 @@ import com.example.frontend.service.client.RetrofitClient;
 import com.example.frontend.util.ImageConversion;
 import com.example.frontend.util.NetworkMeasures;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import okhttp3.MediaType;
 import okhttp3.MultipartBody;
-import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;

@@ -1,11 +1,5 @@
 package com.example.frontend.activity;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.ExperimentalGetImage;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -15,10 +9,15 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.ExperimentalGetImage;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import com.example.frontend.R;
 import com.example.frontend.schema.UserSchema;
 import com.example.frontend.service.LoginService;
-import com.example.frontend.util.NetworkMeasures;
 import com.google.android.material.button.MaterialButton;
 
 import okhttp3.ResponseBody;
