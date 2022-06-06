@@ -3,6 +3,13 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/_Master2 OoOo/BSC/tsrapp/frontend/app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.2205" />
+        <entry key="..\:/_Master2 OoOo/BSC/tsrapp/frontend/app/src/main/res/drawable/background.xml" value="0.2205" />
+        <entry key="..\:/_Master2 OoOo/BSC/tsrapp/frontend/app/src/main/res/drawable/ic_baseline_info_24.xml" value="0.2205" />
+        <entry key="..\:/_Master2 OoOo/BSC/tsrapp/frontend/app/src/main/res/drawable/ic_baseline_person_24.xml" value="0.2205" />
+        <entry key="..\:/_Master2 OoOo/BSC/tsrapp/frontend/app/src/main/res/drawable/ic_baseline_person_outline_24.xml" value="0.2205" />
+        <entry key="..\:/_Master2 OoOo/BSC/tsrapp/frontend/app/src/main/res/drawable/ic_launcher_background.xml" value="0.2205" />
+        <entry key="..\:/_Master2 OoOo/BSC/tsrapp/frontend/app/src/main/res/layout-land/activity_main.xml" value="0.18093556928508384" />
         <entry key="..\:/_Master2 OoOo/BSC/tsrapp/frontend/app/src/main/res/layout/activity_camera.xml" value="0.19947916666666668" />
         <entry key="..\:/_Master2 OoOo/BSC/tsrapp/frontend/app/src/main/res/layout/activity_main.xml" value="0.21354166666666666" />
       </map>
