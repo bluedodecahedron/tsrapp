@@ -47,8 +47,13 @@ public class RetrofitClient {
     private void loadBackendHost(Context context) {
         try {
             InputStream inputStream = context.getResources().openRawResource(R.raw.backend_host);
-            backendHost = new BufferedReader(new InputStreamReader(inputStream)).readLine();
-            Log.i(this.getClass().getName(), "Loaded backend host: " + backendHost);
+            String firstLine = new BufferedReader(new InputStreamReader(inputStream)).readLine();
+            if(!firstLine.isEmpty()) {
+                backendHost = firstLine;
+                Log.i(this.getClass().getName(), "Loaded backend host: '" + backendHost + "'");
+            } else {
+                Log.i(this.getClass().getName(), "Backend host file was empty. Use default host: " + backendHost);
+            }
         } catch (Resources.NotFoundException e) {
             Log.i(this.getClass().getName(), "No backend host file found. Use default host: " + backendHost);
         } catch (IOException e) {
