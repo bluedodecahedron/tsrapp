@@ -10,10 +10,12 @@ import android.widget.Toast;
 import com.example.frontend.service.client.API;
 import com.example.frontend.service.client.RetrofitClient;
 import com.example.frontend.schema.UserSchema;
+import com.example.frontend.util.NetworkMeasures;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.function.Consumer;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -22,28 +24,31 @@ import retrofit2.Response;
 
 public class LoginService {
     Context context;
-    Runnable onLoginSuccess;
-    Runnable onLoginFailure;
-    boolean loggedIn;
+    Consumer<Response<ResponseBody>> onLoginSuccess;
+    Consumer<Response<ResponseBody>> onLoginFailure;
+    Consumer<Throwable> onRequestFailure;
 
-    public LoginService(Context context, Runnable onLoginSuccess, Runnable onLoginFailure) {
+    public LoginService(
+            Context context,
+            Consumer<Response<ResponseBody>> onLoginSuccess,
+            Consumer<Response<ResponseBody>> onLoginFailure,
+            Consumer<Throwable> onRequestFailure
+    ) {
         this.context = context;
         this.onLoginSuccess = onLoginSuccess;
         this.onLoginFailure = onLoginFailure;
+        this.onRequestFailure = onRequestFailure;
     }
 
     public void login(UserSchema user) {
         cleanCookies();
-
-        List<String> bla = new ArrayList<>();
 
         //get request call
         API api = RetrofitClient.getInstance(context).getAPI();
         Call<ResponseBody> call = api.login(user);
 
         //queue request (is handled asynchronously)
-        LoginCallback callback = new LoginCallback(user);
-        call.enqueue(callback);
+        call.enqueue(new LoginCallback(user));
     }
 
     private void cleanCookies() {
@@ -65,48 +70,32 @@ public class LoginService {
         public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
             if(response.isSuccessful()) {
                 handleLoginSuccess(user, response);
-                onLoginSuccess.run();
+                onLoginSuccess.accept(response);
             } else {
                 handleLoginFailure(user, response);
-                onLoginFailure.run();
+                onLoginFailure.accept(response);
             }
         }
 
         @Override
         public void onFailure(Call<ResponseBody> call, Throwable t) {
-            handleRequestFailure(user, t);
+            handleRequestFailure(t);
+            onRequestFailure.accept(t);
         }
     }
 
     private void handleLoginSuccess(UserSchema user, Response<ResponseBody> response) {
-        loggedIn = true;
-
-        //success message
-        Log.i(this.getClass().getName(), "LOGIN SUCCESSFUL");
-        Log.i(this.getClass().getName(), "API TIME: " + getApiTime(response) + "ms");
-        Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show();
-
+        Log.i(this.getClass().getName(), "Login successful, response time: " + NetworkMeasures.getResponseTime(response) + "ms");
         rememberUser(user.getUsername(), user.getPassword());
     }
 
     private void handleLoginFailure(UserSchema user, Response<ResponseBody> response) {
-        loggedIn = false;
-
-        //error message
-        Log.e(this.getClass().getName(), "Login request failed with status code " + response.code() + ": " + response.message());
+        Log.e(this.getClass().getName(), "Login request for " + user.getUsername() + " failed with status code " + response.code() + ": " + response.message());
     }
 
-    private void handleRequestFailure(UserSchema user, Throwable t) {
-        Toast.makeText(context, "Login Request failed", Toast.LENGTH_SHORT).show();
+    private void handleRequestFailure(Throwable t) {
+        Log.e(this.getClass().getName(), "Request failed. Bad connection?");
         t.printStackTrace();
-    }
-
-    private long getApiTime(Response<ResponseBody> response) {
-        long requestTime = response.raw().sentRequestAtMillis();
-        // time when the response was received
-        long responseTime = response.raw().receivedResponseAtMillis();
-        //time taken to receive the response after the request was sent
-        return  responseTime - requestTime;
     }
 
     private void rememberUser(String username, String password) {

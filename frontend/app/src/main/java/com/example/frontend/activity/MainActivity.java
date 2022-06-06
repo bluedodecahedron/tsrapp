@@ -2,6 +2,7 @@ package com.example.frontend.activity;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.ExperimentalGetImage;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -17,11 +18,18 @@ import android.widget.Toast;
 import com.example.frontend.R;
 import com.example.frontend.schema.UserSchema;
 import com.example.frontend.service.LoginService;
+import com.example.frontend.util.NetworkMeasures;
 import com.google.android.material.button.MaterialButton;
 
+import okhttp3.ResponseBody;
+import retrofit2.Response;
+
+@ExperimentalGetImage
 public class MainActivity extends AppCompatActivity {
     private static final String[] CAMERA_PERMISSION = new String[]{Manifest.permission.CAMERA};
     private static final int CAMERA_REQUEST_CODE = 10;
+
+    private LoginService loginService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,8 +41,13 @@ public class MainActivity extends AppCompatActivity {
         EditText username = findViewById(R.id.username);
         EditText password = findViewById(R.id.password);
 
-        // define login service with lambdas handling login success and login failure
-        LoginService loginService = new LoginService(this, this::enableCamera, this::showLoginError);
+        // get new login service handling login success and login failure (lambdas)
+        loginService = new LoginService(
+                this,
+                this::onLoginSuccess,
+                this::onLoginFailure,
+                this::onRequestFailure
+        );
 
         // get remembered user
         UserSchema rememberedUser = loginService.getRememberedUser();
@@ -54,8 +67,17 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void showLoginError() {
+    private void onLoginSuccess(Response<ResponseBody> response) {
+        Toast.makeText(this, "Login successful", Toast.LENGTH_SHORT).show();
+        enableCamera();
+    }
+
+    private void onLoginFailure(Response<ResponseBody> response) {
         findViewById(R.id.notification).setVisibility(View.VISIBLE);
+    }
+
+    private void onRequestFailure(Throwable t) {
+        Toast.makeText(this, "Request failed. Bad connection?", Toast.LENGTH_SHORT).show();
     }
 
     private void enableCamera() {

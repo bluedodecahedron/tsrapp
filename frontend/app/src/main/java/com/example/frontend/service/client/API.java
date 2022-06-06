@@ -15,7 +15,7 @@ public interface API {
     Call<ResponseBody> login(@Body UserSchema userSchema);
 
     @Multipart
-    @POST("tsdr/trafficimg")
+    @POST("api/tsdr/trafficimg")
     Call<ResponseBody> trafficSignDetection(@Part MultipartBody.Part imageFile);
 
     @POST("api/tsdr/test")
