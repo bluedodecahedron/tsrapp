@@ -1,4 +1,4 @@
-package com.example.frontend;
+package com.example.frontend.schema;
 
 public class UserSchema {
     private String username;

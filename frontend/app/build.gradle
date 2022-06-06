@@ -43,4 +43,12 @@ dependencies {
     implementation "androidx.camera:camera-camera2:$camerax_version"
     implementation "androidx.camera:camera-lifecycle:$camerax_version"
     implementation "androidx.camera:camera-view:$camerax_version"
+
+    //Rest client libs
+    implementation "com.squareup.okhttp3:okhttp:4.9.3"
+    implementation 'com.squareup.retrofit2:retrofit:2.3.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.1.0'
+
+    //Apache commons for string manipulation
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
 }

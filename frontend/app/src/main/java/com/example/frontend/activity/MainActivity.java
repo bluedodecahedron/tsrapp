@@ -1,4 +1,4 @@
-package com.example.frontend;
+package com.example.frontend.activity;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -6,22 +6,17 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
-import android.accounts.AbstractAccountAuthenticator;
-import android.accounts.Account;
-import android.accounts.AccountAuthenticatorResponse;
-import android.accounts.AccountManager;
-import android.accounts.NetworkErrorException;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.example.frontend.R;
+import com.example.frontend.schema.UserSchema;
+import com.example.frontend.service.LoginService;
 import com.google.android.material.button.MaterialButton;
 
 public class MainActivity extends AppCompatActivity {
@@ -33,59 +28,34 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        UserSchema rememberedUser = getRememberedUser();
+        // get layout elements
+        MaterialButton loginbtn = findViewById(R.id.loginbtn);
+        EditText username = findViewById(R.id.username);
+        EditText password = findViewById(R.id.password);
 
-        MaterialButton loginbtn = (MaterialButton) findViewById(R.id.loginbtn);
-        EditText username = (EditText)findViewById(R.id.username);
-        EditText password = (EditText)findViewById(R.id.password);
+        // define login service with lambdas handling login success and login failure
+        LoginService loginService = new LoginService(this, this::enableCamera, this::showLoginError);
 
+        // get remembered user
+        UserSchema rememberedUser = loginService.getRememberedUser();
         if(rememberedUser != null) {
             username.setText(rememberedUser.getUsername());
             password.setText(rememberedUser.getPassword());
         }
 
+        // define login button click
         loginbtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                login(username, password);
+                UserSchema user = new UserSchema(username.getText().toString(), password.getText().toString());
+                loginService.login(user);
             }
         });
 
     }
 
-    public void login(EditText username, EditText password) {
-        if (username.getText().toString().equals("admin") && password.getText().toString().equals("admin")) {
-            Toast.makeText(this, "Login successful", Toast.LENGTH_SHORT).show();
-            Log.i(this.getClass().getName(), "Login successful");
-            rememberUser(username.getText().toString(), password.getText().toString());
-            enableCamera();
-        } else {
-            findViewById(R.id.notification).setVisibility(View.VISIBLE);
-            Log.i(this.getClass().getName(), "Login failed");
-        }
-    }
-
-    private void rememberUser(String username, String password) {
-        SharedPreferences sp=getSharedPreferences("Login", MODE_PRIVATE);
-        SharedPreferences.Editor Ed=sp.edit();
-        Ed.putString("username",username );
-        Ed.putString("password",password);
-        Ed.commit();
-    }
-
-    private UserSchema getRememberedUser() {
-        SharedPreferences sp1=this.getSharedPreferences("Login", MODE_PRIVATE);
-
-        if (sp1.contains("username") && sp1.contains("password")) {
-            String username=sp1.getString("username", null);
-            String password = sp1.getString("password", null);
-
-            Log.i(this.getClass().getName(), "Retrieved remembered user: "  + username );
-            return new UserSchema(username, password);
-        } else {
-            Log.i(this.getClass().getName(), "No remembered user");
-            return null;
-        }
+    private void showLoginError() {
+        findViewById(R.id.notification).setVisibility(View.VISIBLE);
     }
 
     private void enableCamera() {

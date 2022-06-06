@@ -19,7 +19,7 @@ def traffic_sign_detection(request, image_file: UploadedFile = File(...)):
 
 @router.post('/test', auth=None)
 def test(request):
-    requestLogger.info('test')
+    requestLogger.info('test', extra={'request': request})
 
     return 0
 
