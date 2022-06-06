@@ -86,10 +86,6 @@ public class LoginService {
         Log.i(this.getClass().getName(), "API TIME: " + getApiTime(response) + "ms");
         Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show();
 
-        //can remove?
-        Intent main = new Intent(context, context.getClass());
-        main.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-
         rememberUser(user.getUsername(), user.getPassword());
     }
 
