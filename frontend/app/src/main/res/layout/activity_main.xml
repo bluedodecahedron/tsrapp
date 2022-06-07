@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@drawable/backgroundstreets_portrait"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activity.MainActivity">
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top">
+        <TextView
+            android:id="@+id/signin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="50dp"
+            android:layout_marginTop="100dp"
+            android:layout_marginEnd="50dp"
+            android:layout_marginBottom="20dp"
+            android:gravity="center"
+            android:text="Sign in"
+            android:textColor="@color/white"
+            android:textSize="35dp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/username"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/signin"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="10dp"
+            android:layout_marginBottom="10dp"
+            android:background="#30ffffff"
+            android:drawableStart="@drawable/ic_baseline_person_24"
+            android:drawablePadding="20dp"
+            android:padding="20dp"
+            android:textColor="@color/white"
+            android:textColorHint="@color/white"
+            android:hint="Username"
+            android:inputType="textEmailAddress"
+            android:imeOptions="flagNoExtractUi"
+            android:maxLines="1"/>
+
+        <EditText
+            android:id="@+id/password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/username"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="10dp"
+            android:layout_marginBottom="10dp"
+            android:background="#30ffffff"
+            android:drawableStart="@drawable/ic_baseline_lock_24"
+            android:drawablePadding="20dp"
+            android:padding="20dp"
+            android:textColor="@color/white"
+            android:textColorHint="@color/white"
+            android:hint="Password"
+            android:inputType="textPassword"
+            android:imeOptions="flagNoExtractUi"
+            android:maxLines="1"/>
+
+        <TextView
+            android:id="@+id/notification"
+            android:visibility="invisible"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/password"
+            android:layout_alignParentStart="true"
+            android:layout_marginStart="40dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginEnd="10dp"
+            android:layout_marginBottom="20dp"
+            android:paddingTop="15dp"
+            android:paddingBottom="15dp"
+            android:textColor="@color/red_error"
+            android:text="Login failed. Check\n your credentials." />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/loginbtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/password"
+            android:layout_alignParentEnd="true"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginEnd="10dp"
+            android:layout_marginBottom="20dp"
+            android:backgroundTint="@color/green_primary"
+            android:paddingRight="50dp"
+            android:paddingLeft="50dp"
+            android:paddingTop="15dp"
+            android:paddingBottom="15dp"
+            android:text="Login" />
+    </RelativeLayout>
+</LinearLayout>

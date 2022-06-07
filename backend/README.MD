@@ -1,4 +1,6 @@
-# TSR Backend API Service with Django
+# Backend API service with django
+
+This project represents the backend server for the TSDR App. It provides an API that allows traffic sign detection in images.
 
 ## Installation
 

@@ -12,4 +12,6 @@ app/util/__pycache__/
 app/apps/__pycache__/
 app/apps/*/__pycache__/
 
+backend/public_hosts.txt
+
 

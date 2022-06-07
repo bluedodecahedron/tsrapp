@@ -12,12 +12,16 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 
 import os
 import logging
+import configparser
 from pathlib import Path
 from django.core.management.utils import get_random_secret_key
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 STORAGE_DIR = BASE_DIR / 'storage'
+
+# Add public IP to this file if necessary
+PUBLIC_HOSTS_FILE = BASE_DIR / 'backend/public_hosts.txt'
 
 
 # Quick-start development settings - unsuitable for production
@@ -30,9 +34,13 @@ SECRET_KEY = get_random_secret_key()
 DEBUG = False
 
 ALLOWED_HOSTS = [
-    '193.80.5.192',
     'localhost',
 ]
+
+if os.path.exists(PUBLIC_HOSTS_FILE):
+    with open(PUBLIC_HOSTS_FILE, 'r') as file:
+        public_hosts = file.read().splitlines()
+        ALLOWED_HOSTS.extend(public_hosts)
 
 
 # Application definition
@@ -113,14 +121,14 @@ LOGGING = {
     'disable_existing_loggers': False,  # retain the default loggers
     'formatters': {
         'backend': {
-            'format': '[{asctime}] - {levelname} - {threadName}({thread}) - {message}',
+            'format': '{asctime} | {levelname} | {threadName}({thread}) - {message}',
             'style': '{',
-            'datefmt': '%d/%m/%Y %H:%M:%S',
+            # 'datefmt': '%d/%m/%Y %H:%M:%S',
         },
         'request_format': {
-            'format': '[{asctime}] - {levelname} - {threadName}({thread}) - Request: {message} (IP: {ip})',
+            'format': '{asctime} | {levelname} | {threadName}({thread}) - Request: {message} (IP: {ip})',
             'style': '{',
-            'datefmt': '%d/%m/%Y %H:%M:%S',
+            # 'datefmt': '%d/%m/%Y %H:%M:%S',
         },
     },
     'handlers': {
