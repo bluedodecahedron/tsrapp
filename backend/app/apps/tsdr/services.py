@@ -39,13 +39,18 @@ def save_result(result_image):
     cv2.imwrite(save_file_name, result_image)
 
 
-def tsd(image_file):
+def tsd(image):
+    outputs, img_info = predictor.inference(image)
+    result_image = predictor.visual(outputs[0], img_info, predictor.confthre)
+
+    return result_image
+
+
+def tsd_file(image_file):
     image = cv2.imdecode(np.frombuffer(image_file.file.read(), np.uint8), cv2.IMREAD_UNCHANGED)
 
     outputs, img_info = predictor.inference(image)
     result_image = predictor.visual(outputs[0], img_info, predictor.confthre)
     save_result(result_image)
-    # cv2.imshow('Image', result_image)
-    # cv2.waitKey(0)
 
     return 0
