@@ -74,7 +74,7 @@ public class CameraActivity extends AppCompatActivity {
                 new ImageAnalysis
                         .Builder()
                         //.setTargetResolution(new Size(640, 480))
-                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_BLOCK_PRODUCER)
                         .build();
         imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(this), new TsdrAnalyzer());
 
@@ -91,7 +91,7 @@ public class CameraActivity extends AppCompatActivity {
         public void analyze(@NonNull ImageProxy imageProxy) {
             // analyze image every 2 seconds (temporary solution)
             long timeDiff = ChronoUnit.MILLIS.between(latestAnalysisTime, LocalDateTime.now());
-            if (timeDiff > 2000L) {
+            if (timeDiff > 100L) {
                 Log.i(this.getClass().getName(), "Analyzing new image");
                 latestAnalysisTime = LocalDateTime.now();
                 tsdrService.trafficSignDetection(imageProxy);
@@ -101,15 +101,15 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void onTsdrSuccess(Response<ResponseBody> response) {
-        Toast.makeText(this, "TSDR success, response time: " + NetworkMeasures.getResponseTime(response) + "ms", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, "TSDR success, response time: " + NetworkMeasures.getResponseTime(response) + "ms", Toast.LENGTH_SHORT).show();
     }
 
     private void onTsdrFailure(Response<ResponseBody> response) {
-        Toast.makeText(this, "TSDR failed: " + response.message(), Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, "TSDR failed: " + response.message(), Toast.LENGTH_SHORT).show();
     }
 
     private void onRequestFailure(Throwable t) {
-        Toast.makeText(this, "Request failed. Bad connection?", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, "Request failed. Bad connection?", Toast.LENGTH_SHORT).show();
     }
 
 }

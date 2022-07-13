@@ -26,6 +26,7 @@ public class TsdrService {
     Consumer<Response<ResponseBody>> onTsdrSuccess;
     Consumer<Response<ResponseBody>> onTsdrFailure;
     Consumer<Throwable> onRequestFailure;
+    int id = 0;
 
     public TsdrService(
             Context context,
@@ -49,7 +50,7 @@ public class TsdrService {
 
         // get request call
         API api = RetrofitClient.getInstance(context).getAPI();
-        Call<ResponseBody> call = api.trafficSignDetection(formData);
+        Call<ResponseBody> call = api.trafficSignDetection(id++, formData);
 
         //queue request (is handled asynchronously)
         call.enqueue(new TsdrCallback());
