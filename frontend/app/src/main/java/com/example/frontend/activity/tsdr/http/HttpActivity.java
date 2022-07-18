@@ -89,7 +89,7 @@ public class HttpActivity extends AppCompatActivity {
         public void analyze(@NonNull ImageProxy imageProxy) {
             // analyze image every 2 seconds (temporary solution)
             long timeDiff = ChronoUnit.MILLIS.between(latestAnalysisTime, LocalDateTime.now());
-            if (timeDiff > 100L) {
+            if (timeDiff > 1000L) {
                 Log.i(this.getClass().getName(), "Analyzing new image");
                 latestAnalysisTime = LocalDateTime.now();
                 tsdrService.trafficSignDetection(imageProxy);

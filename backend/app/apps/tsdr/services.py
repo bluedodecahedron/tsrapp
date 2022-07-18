@@ -34,9 +34,10 @@ def save_result(result_image):
     save_folder = 'storage/tsd'
     os.makedirs(save_folder, exist_ok=True)
     time_now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")[:-3]
-    save_file_name = os.path.join(save_folder, time_now + '.jpg')
+    save_file_name = save_folder + '/' + time_now + '.jpg'
     logger.info("Saving detection result in {}".format(save_file_name))
     cv2.imwrite(save_file_name, result_image)
+    return save_file_name
 
 
 def tsd(image):
@@ -51,6 +52,10 @@ def tsd_file(image_file):
 
     outputs, img_info = predictor.inference(image)
     result_image = predictor.visual(outputs[0], img_info, predictor.confthre)
-    save_result(result_image)
+    save_file_name = save_result(result_image)
 
-    return 0
+    # img_encode = bytearray(cv2.imencode('.png', result_image)[1])
+    # image_file = cv2.imread(save_file_name)
+    logger.info("Filename: " + save_file_name)
+    image_file = open("storage/tsd/2022_07_18_19_08_17_438.jpg", mode='rb').read()
+    return image_file
