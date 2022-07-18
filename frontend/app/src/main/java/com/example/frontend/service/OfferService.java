@@ -36,7 +36,7 @@ public class OfferService {
     }
 
     public void offer(Offer offer) {
-        cleanCookies();
+        //cleanCookies();
 
         //get request call
         API api = RetrofitClient.getInstance(context).getAPI();
@@ -64,10 +64,10 @@ public class OfferService {
         @Override
         public void onResponse(Call<Offer> call, Response<Offer> response) {
             if(response.isSuccessful()) {
-                handleLoginSuccess(offer, response);
+                handleOfferSuccess(offer, response);
                 onOfferSuccess.accept(response);
             } else {
-                handleLoginFailure(offer, response);
+                handleOfferFailure(offer, response);
                 onOfferFailure.accept(response);
             }
         }
@@ -79,11 +79,11 @@ public class OfferService {
         }
     }
 
-    private void handleLoginSuccess(Offer offer, Response<Offer> response) {
+    private void handleOfferSuccess(Offer offer, Response<Offer> response) {
         Log.i(this.getClass().getName(), "Offer successful, response time: " + NetworkMeasures.getResponseTime(response) + "ms");
     }
 
-    private void handleLoginFailure(Offer offer, Response<Offer> response) {
+    private void handleOfferFailure(Offer offer, Response<Offer> response) {
         Log.e(this.getClass().getName(), "Offer request for " + offer + " failed with status code " + response.code() + ": " + response.message());
     }
 
