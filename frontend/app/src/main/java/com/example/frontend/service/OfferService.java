@@ -6,8 +6,8 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.example.frontend.schema.Offer;
-import com.example.frontend.service.client.API;
-import com.example.frontend.service.client.RetrofitClient;
+import com.example.frontend.service.HttpClient.API;
+import com.example.frontend.service.HttpClient.RetrofitClient;
 import com.example.frontend.util.NetworkMeasures;
 
 import java.util.HashSet;

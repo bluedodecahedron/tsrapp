@@ -1,4 +1,4 @@
-package com.example.frontend.service.webrtc.observer;
+package com.example.frontend.activity.tsdr.webrtc;
 
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;

@@ -1,12 +1,12 @@
-package com.example.frontend.service.client;
+package com.example.frontend.service.HttpClient;
 
 import android.content.Context;
 import android.content.res.Resources;
 import android.util.Log;
 
 import com.example.frontend.R;
-import com.example.frontend.service.client.interceptor.AddCookiesInterceptor;
-import com.example.frontend.service.client.interceptor.ReceivedCookiesInterceptor;
+import com.example.frontend.service.HttpClient.interceptor.AddCookiesInterceptor;
+import com.example.frontend.service.HttpClient.interceptor.ReceivedCookiesInterceptor;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".activity.CameraActivity">
+    tools:context=".activity.tsdr.http.HttpActivity">
 
     <FrameLayout
         android:layout_width="match_parent"

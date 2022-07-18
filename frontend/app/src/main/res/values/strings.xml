@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">TSDR</string>
+    <string name="perm_denied">App cannot operate\n without camera\n permissions</string>
 </resources>

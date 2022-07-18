@@ -1,4 +1,4 @@
-package com.example.frontend.service.client.interceptor;
+package com.example.frontend.service.HttpClient.interceptor;
 // Original written by tsuharesu
 // Adapted to create a "drop it in and watch it work" approach by Nikhil Jha.
 // Just add your package statement and drop it in the folder with all your other classes.

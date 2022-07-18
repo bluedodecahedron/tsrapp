@@ -1,8 +1,8 @@
-package com.example.frontend.service.webrtc.observer;
+package com.example.frontend.activity.tsdr.webrtc;
 
 import android.util.Log;
 
-import com.example.frontend.databinding.ActivitySamplePeerConnectionBinding;
+import com.example.frontend.databinding.ActivityWebrtcBinding;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -18,10 +18,10 @@ import java.util.Arrays;
 
 public class SimplePeerConnectionObserver implements PeerConnection.Observer {
     private final String TAG;
-    private final ActivitySamplePeerConnectionBinding binding;
+    private final ActivityWebrtcBinding binding;
     private final Runnable onIceGatheringComplete;
 
-    public SimplePeerConnectionObserver(String TAG, ActivitySamplePeerConnectionBinding binding, Runnable onIceGatheringComplete) {
+    public SimplePeerConnectionObserver(String TAG, ActivityWebrtcBinding binding, Runnable onIceGatheringComplete) {
         super();
         this.TAG = TAG;
         this.binding = binding;

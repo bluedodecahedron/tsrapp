@@ -1,9 +1,8 @@
-package com.example.frontend.activity;
+package com.example.frontend.activity.tsdr.http;
 
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -20,7 +19,6 @@ import androidx.lifecycle.LifecycleOwner;
 
 import com.example.frontend.R;
 import com.example.frontend.service.TsdrService;
-import com.example.frontend.util.NetworkMeasures;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.time.LocalDateTime;
@@ -31,7 +29,7 @@ import okhttp3.ResponseBody;
 import retrofit2.Response;
 
 @ExperimentalGetImage
-public class CameraActivity extends AppCompatActivity {
+public class HttpActivity extends AppCompatActivity {
     private PreviewView previewView;
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private TextView textView;
@@ -42,7 +40,7 @@ public class CameraActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_camera);
+        setContentView(R.layout.activity_http);
 
         // get new tsdr service
         tsdrService = new TsdrService(

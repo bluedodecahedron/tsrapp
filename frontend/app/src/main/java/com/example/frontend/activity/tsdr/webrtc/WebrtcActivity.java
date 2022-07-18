@@ -1,4 +1,4 @@
-package com.example.frontend.activity;
+package com.example.frontend.activity.tsdr.webrtc;
 
 import android.Manifest;
 import android.os.Bundle;
@@ -10,11 +10,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
 
 import com.example.frontend.R;
-import com.example.frontend.databinding.ActivitySamplePeerConnectionBinding;
+import com.example.frontend.databinding.ActivityWebrtcBinding;
 import com.example.frontend.schema.Offer;
 import com.example.frontend.service.OfferService;
-import com.example.frontend.service.webrtc.observer.SimplePeerConnectionObserver;
-import com.example.frontend.service.webrtc.observer.SimpleSdpObserver;
 
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
@@ -41,15 +39,15 @@ import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 import retrofit2.Response;
 
-public class WebRTCActivity extends AppCompatActivity {
-    private static final String TAG = WebRTCActivity.class.getSimpleName();
+public class WebrtcActivity extends AppCompatActivity {
+    private static final String TAG = WebrtcActivity.class.getSimpleName();
     private static final int RC_CALL = 120;
     public static final String VIDEO_TRACK_ID = "ARDAMSv0";
     public static final int VIDEO_RESOLUTION_WIDTH = 720;
     public static final int VIDEO_RESOLUTION_HEIGHT = 396;
     public static final int FPS = 20;
 
-    private ActivitySamplePeerConnectionBinding binding;
+    private ActivityWebrtcBinding binding;
     private PeerConnection localPeerConnection;
     private EglBase rootEglBase;
     private PeerConnectionFactory factory;
@@ -58,7 +56,7 @@ public class WebRTCActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_sample_peer_connection);
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_webrtc);
         setSupportActionBar(binding.toolbar);
 
         start();

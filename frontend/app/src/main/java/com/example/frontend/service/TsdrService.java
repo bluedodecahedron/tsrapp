@@ -6,8 +6,8 @@ import android.util.Log;
 import androidx.camera.core.ExperimentalGetImage;
 import androidx.camera.core.ImageProxy;
 
-import com.example.frontend.service.client.API;
-import com.example.frontend.service.client.RetrofitClient;
+import com.example.frontend.service.HttpClient.API;
+import com.example.frontend.service.HttpClient.RetrofitClient;
 import com.example.frontend.util.ImageConversion;
 import com.example.frontend.util.NetworkMeasures;
 
