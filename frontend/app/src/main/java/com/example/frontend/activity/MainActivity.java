@@ -68,7 +68,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void onLoginSuccess(Response<ResponseBody> response) {
         Toast.makeText(this, "Login successful", Toast.LENGTH_SHORT).show();
-        enableCamera();
+        //enableTsdrHttp();
+        enableTsdrWebRTC();
     }
 
     private void onLoginFailure(Response<ResponseBody> response) {
@@ -79,7 +80,12 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(this, "Request failed. Bad connection?", Toast.LENGTH_SHORT).show();
     }
 
-    private void enableCamera() {
+    private void enableTsdrWebRTC() {
+        Intent intent = new Intent(this, WebRTCActivity.class);
+        startActivity(intent);
+    }
+
+    private void enableTsdrHttp() {
         if (hasCameraPermission()) {
             Intent intent = new Intent(this, CameraActivity.class);
             startActivity(intent);
@@ -109,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == CAMERA_REQUEST_CODE) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Log.i(this.getClass().getName(), "Camera permissions granted");
-                enableCamera();
+                enableTsdrHttp();
             } else {
                 Log.i(this.getClass().getName(), "Camera permissions denied");
                 Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
