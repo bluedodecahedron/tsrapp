@@ -1,5 +1,6 @@
 package com.example.frontend.service.client;
 
+import com.example.frontend.schema.Offer;
 import com.example.frontend.schema.UserSchema;
 
 import okhttp3.MultipartBody;
@@ -21,4 +22,7 @@ public interface API {
 
     @POST("api/tsdr/test")
     Call<ResponseBody> test();
+
+    @POST("/api/webrtc/server/offer")
+    Call<Offer> offer(@Body Offer offer);
 }
