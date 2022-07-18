@@ -36,21 +36,12 @@ public class OfferService {
     }
 
     public void offer(Offer offer) {
-        //cleanCookies();
-
         //get request call
         API api = RetrofitClient.getInstance(context).getAPI();
         Call<Offer> call = api.offer(offer);
 
         //queue request (is handled asynchronously)
         call.enqueue(new OfferCallback(offer));
-    }
-
-    private void cleanCookies() {
-        HashSet<String> cookies = new HashSet<>();
-        SharedPreferences.Editor memes = PreferenceManager.getDefaultSharedPreferences(context).edit();
-        memes.putStringSet("PREF_COOKIES", cookies).apply();
-        memes.commit();
     }
 
     class OfferCallback implements Callback<Offer> {
