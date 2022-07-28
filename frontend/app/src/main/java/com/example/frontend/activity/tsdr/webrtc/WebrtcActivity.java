@@ -1,6 +1,8 @@
 package com.example.frontend.activity.tsdr.webrtc;
 
 import android.Manifest;
+import android.media.MediaCodecInfo;
+import android.media.MediaCodecList;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
@@ -25,15 +27,20 @@ import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.RtpParameters;
 import org.webrtc.RtpSender;
+import org.webrtc.RtpTransceiver;
 import org.webrtc.SessionDescription;
 import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoDecoderFactory;
+import org.webrtc.VideoEncoder;
 import org.webrtc.VideoEncoderFactory;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
@@ -44,8 +51,8 @@ public class WebrtcActivity extends AppCompatActivity {
     private static final int RC_CALL = 120;
     public static final String VIDEO_TRACK_ID = "ARDAMSv0";
     public static final int VIDEO_RESOLUTION_WIDTH = 720;
-    public static final int VIDEO_RESOLUTION_HEIGHT = 396;
-    public static final int FPS = 20;
+    public static final int VIDEO_RESOLUTION_HEIGHT = 480;
+    public static final int FPS = 60;
 
     private ActivityWebrtcBinding binding;
     private PeerConnection localPeerConnection;
@@ -110,7 +117,7 @@ public class WebrtcActivity extends AppCompatActivity {
         final VideoEncoderFactory encoderFactory;
         final VideoDecoderFactory decoderFactory;
 
-        encoderFactory = new DefaultVideoEncoderFactory(rootEglBase.getEglBaseContext(), false /* enableIntelVp8Encoder */, true);
+        encoderFactory = new DefaultVideoEncoderFactory(rootEglBase.getEglBaseContext(), true /* enableIntelVp8Encoder */, true);
         decoderFactory = new DefaultVideoDecoderFactory(rootEglBase.getEglBaseContext());
 
         PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(this)
@@ -131,7 +138,7 @@ public class WebrtcActivity extends AppCompatActivity {
 
         SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create("CaptureThread", rootEglBase.getEglBaseContext());
         VideoSource videoSource = factory.createVideoSource(false);
-        videoCapturer.initialize(surfaceTextureHelper, this, videoSource.getCapturerObserver());
+        videoCapturer.initialize(surfaceTextureHelper, this, new SimpleCapturerObserver(videoSource.getCapturerObserver()));
 
         videoCapturer.startCapture(VIDEO_RESOLUTION_WIDTH, VIDEO_RESOLUTION_HEIGHT, FPS);
 
@@ -213,8 +220,6 @@ public class WebrtcActivity extends AppCompatActivity {
     }
 
     private void startStreamingVideo() {
-        //MediaStream mediaStream = factory.createLocalMediaStream("ARDAMS");
-        //mediaStream.addTrack(videoTrackFromCamera);
         localPeerConnection.addTrack(videoTrackFromCamera);
 
         MediaConstraints sdpMediaConstraints = new MediaConstraints();
@@ -237,7 +242,7 @@ public class WebrtcActivity extends AppCompatActivity {
 
         RtpSender sender = localPeerConnection.getSenders().get(0);
         RtpParameters parameters = sender.getParameters();
-        parameters.encodings.get(0).maxBitrateBps = 3 * 1000 * 1000;
+        parameters.encodings.get(0).maxBitrateBps = 10 * 1000 * 1000;
         sender.setParameters(parameters);
 
         sendOfferSdp(localPeerConnection.getLocalDescription());
