@@ -91,18 +91,26 @@ public class WebrtcActivity extends AppCompatActivity {
     private void initializeSurfaceViews() {
         Log.i(TAG, "Initializing Surface Views");
         rootEglBase = EglBase.create();
-        binding.surfaceView.init(rootEglBase.getEglBaseContext(), null);
-        //binding.surfaceView.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL); //NEW
-        binding.surfaceView.setEnableHardwareScaler(true);
-        binding.surfaceView.setMirror(false);
 
         binding.surfaceView2.init(rootEglBase.getEglBaseContext(), null);
         //binding.surfaceView2.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL); //NEW
         binding.surfaceView2.setEnableHardwareScaler(true);
         binding.surfaceView2.setMirror(false);
+        binding.surfaceView2.setTAG(TAG);
+        binding.surfaceView2.setUpdateFpsUi(this::updateFpsUi);
 
         Log.i(TAG, "Initialized surface views");
         //add one more
+    }
+
+    private void updateFpsUi(Float fps) {
+        //runOnUiThread because only the original thread that created a view hierarchy can touch its views
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                binding.fpsCounter.setText(getString(R.string.fps_counter, fps));
+            }
+        });
     }
 
     private void initializePeerConnectionFactory() {
@@ -137,8 +145,7 @@ public class WebrtcActivity extends AppCompatActivity {
 
         videoTrackFromCamera = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
         videoTrackFromCamera.setEnabled(true);
-        videoTrackFromCamera.addSink(binding.surfaceView);
-        Log.i(TAG, "Started showing camera track");
+        Log.i(TAG, "Created camera track");
     }
 
 

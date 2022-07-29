@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">TSDR</string>
     <string name="perm_denied">App cannot operate\n without camera\n permissions</string>
+    <string name="fps_counter">%1$.1f FPS</string>
 </resources>
