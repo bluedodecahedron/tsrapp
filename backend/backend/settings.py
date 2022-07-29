@@ -69,9 +69,6 @@ MIDDLEWARE = [
 
 # CORS_ALLOWED_ORIGINS = [
 #    'http://localhost:8080',
-#    'http://tsdr.ddns.net:8080',
-#    'http://localhost:40101',
-#    'http://tsdr.ddns.net:40101',
 # ]
 
 CORS_ALLOW_ALL_ORIGINS = True
