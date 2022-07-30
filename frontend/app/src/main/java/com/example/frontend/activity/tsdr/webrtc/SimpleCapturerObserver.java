@@ -9,7 +9,7 @@ import java.time.temporal.ChronoUnit;
 public class SimpleCapturerObserver implements CapturerObserver {
     private final CapturerObserver capturerObserver;
     private LocalDateTime lastFrameTime;
-    private static final int MAXFPS = 10;
+    private static final int MAX_FPS = 15;
 
     public SimpleCapturerObserver(CapturerObserver capturerObserver) {
         this.capturerObserver = capturerObserver;
@@ -29,7 +29,7 @@ public class SimpleCapturerObserver implements CapturerObserver {
 
     @Override
     public void onFrameCaptured(VideoFrame videoFrame) {
-        long fpsDelta = 1000L/MAXFPS - 10L;
+        long fpsDelta = 1000L/ MAX_FPS - 10L;
         LocalDateTime nextFrameTime = lastFrameTime.plus(fpsDelta, ChronoUnit.MILLIS);
         if (LocalDateTime.now().isAfter(nextFrameTime)) {
             lastFrameTime = LocalDateTime.now();

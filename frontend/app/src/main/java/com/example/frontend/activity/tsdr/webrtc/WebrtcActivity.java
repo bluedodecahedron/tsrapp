@@ -3,6 +3,7 @@ package com.example.frontend.activity.tsdr.webrtc;
 import android.Manifest;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -10,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
 
 import com.example.frontend.R;
+import com.example.frontend.databinding.ActivityMainBinding;
 import com.example.frontend.databinding.ActivityWebrtcBinding;
 import com.example.frontend.schema.Offer;
 import com.example.frontend.service.OfferService;
@@ -23,8 +25,9 @@ import org.webrtc.EglBase;
 import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
-import org.webrtc.RtpParameters;
-import org.webrtc.RtpSender;
+import org.webrtc.RTCStats;
+import org.webrtc.RTCStatsCollectorCallback;
+import org.webrtc.RTCStatsReport;
 import org.webrtc.SessionDescription;
 import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.VideoCapturer;
@@ -33,7 +36,11 @@ import org.webrtc.VideoEncoderFactory;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 
+import java.math.BigInteger;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Map;
 
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
@@ -52,6 +59,11 @@ public class WebrtcActivity extends AppCompatActivity {
     private EglBase rootEglBase;
     private PeerConnectionFactory factory;
     private VideoTrack videoTrackFromCamera;
+
+    private BigInteger bytesSent = BigInteger.ZERO;
+    private BigInteger bytesReceived = BigInteger.ZERO;
+    private LocalDateTime lastBandwidthUpdate = LocalDateTime.now();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,6 +110,7 @@ public class WebrtcActivity extends AppCompatActivity {
         binding.surfaceView2.setMirror(false);
         binding.surfaceView2.setTAG(TAG);
         binding.surfaceView2.setUpdateFpsUi(this::updateFpsUi);
+        binding.surfaceView2.setUpdateBandwithUi(this::updateBandwidthUi);
 
         Log.i(TAG, "Initialized surface views");
         //add one more
@@ -113,12 +126,57 @@ public class WebrtcActivity extends AppCompatActivity {
         });
     }
 
+    private void updateBandwidthUi() {
+        //runOnUiThread because only the original thread that created a view hierarchy can touch its views
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                localPeerConnection.getStats(new RTCStatsCollectorCallback() {
+                    @Override
+                    public void onStatsDelivered(RTCStatsReport rtcStatsReport) {
+                        Map<String, RTCStats> statsmap = rtcStatsReport.getStatsMap();
+                        for(RTCStats rtcStats : statsmap.values()) {
+                            if (rtcStats.getType().equals("candidate-pair")) {
+                                Map<String, Object> members = rtcStats.getMembers();
+                                String state = (String)members.get("state");
+                                if(state != null && state.equals("succeeded")) {
+                                    BigInteger bytesSent = (BigInteger) members.get("bytesSent");
+                                    BigInteger bytesReceived = (BigInteger) members.get("bytesReceived");
+                                    if(bytesSent != null && bytesReceived != null) {
+                                        BigInteger bytesSentDiff = bytesSent.subtract(WebrtcActivity.this.bytesSent);
+                                        BigInteger bytesReceivedDiff = bytesReceived.subtract(WebrtcActivity.this.bytesReceived);
+                                        long updateDelay = ChronoUnit.MILLIS.between(lastBandwidthUpdate, LocalDateTime.now());
+                                        //dividing bytes by milliseconds is the same as dividing kilobytes by seconds
+                                        BigInteger uploadRate = bytesSentDiff.divide(BigInteger.valueOf(updateDelay));
+                                        BigInteger downloadRate = bytesReceivedDiff.divide(BigInteger.valueOf(updateDelay));
+
+                                        WebrtcActivity.this.bytesSent = bytesSent;
+                                        WebrtcActivity.this.bytesReceived = bytesReceived;
+                                        lastBandwidthUpdate = LocalDateTime.now();
+
+                                        Log.i(TAG, "Upload rate: " + uploadRate + "kbps, Downoad rate: " + downloadRate + " kbps");
+                                        runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                binding.bandwidth.setText(getString(R.string.bandwidth, downloadRate, uploadRate));
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }
+
     private void initializePeerConnectionFactory() {
         //PeerConnectionFactory.initializeAndroidGlobals(this, true, true, true);
         final VideoEncoderFactory encoderFactory;
         final VideoDecoderFactory decoderFactory;
 
-        encoderFactory = new DefaultVideoEncoderFactory(rootEglBase.getEglBaseContext(), true /* enableIntelVp8Encoder */, true);
+        encoderFactory = new DefaultVideoEncoderFactory(rootEglBase.getEglBaseContext(), false /* enableIntelVp8Encoder */, true);
         decoderFactory = new DefaultVideoDecoderFactory(rootEglBase.getEglBaseContext());
 
         PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(this)
@@ -200,11 +258,17 @@ public class WebrtcActivity extends AppCompatActivity {
 
     private void initializePeerConnections() {
         localPeerConnection = createPeerConnection(factory);
+        localPeerConnection.setBitrate(1000000,2000000,10000000);
     }
 
     private PeerConnection createPeerConnection(PeerConnectionFactory factory) {
         ArrayList<PeerConnection.IceServer> iceServers = new ArrayList<>();
         String URL = "stun:stun.l.google.com:19302";
+        String URL2 = "stun:stun.stochastix.de:3478";
+        String URL3 = "stun:stun.zentauron.de:3478";
+        String URL4 = "stun:stun.studio-link.de:3478";
+        String URL5 = "stun:stun.wtfismyip.com:3478";
+        String URL6 = "stun:stun.voipconnect.com:3478";
         iceServers.add(new PeerConnection.IceServer(URL));
 
         PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServers);
@@ -240,11 +304,6 @@ public class WebrtcActivity extends AppCompatActivity {
     public void onIceGatheringComplete() {
         Log.i(TAG, "onIceGatheringComplete: SDP Offer: " + localPeerConnection.getLocalDescription().type + " \n" + localPeerConnection.getLocalDescription().description);
 
-        RtpSender sender = localPeerConnection.getSenders().get(0);
-        RtpParameters parameters = sender.getParameters();
-        parameters.encodings.get(0).maxBitrateBps = 10 * 1000 * 1000;
-        sender.setParameters(parameters);
-
         sendOfferSdp(localPeerConnection.getLocalDescription());
     }
 
@@ -266,7 +325,12 @@ public class WebrtcActivity extends AppCompatActivity {
         localPeerConnection.setRemoteDescription(new SimpleSdpObserver() {
             @Override
             public void onSetSuccess() {
-                Log.i(TAG, "onCreateSuccess: SDP Answer: " + localPeerConnection.getRemoteDescription().type + " \n" + localPeerConnection.getRemoteDescription().description);
+                Log.i(TAG, "onSetSuccess: SDP Answer: " + localPeerConnection.getRemoteDescription().type + " \n" + localPeerConnection.getRemoteDescription().description);
+
+                //RtpSender sender = localPeerConnection.getSenders().get(0);
+                //RtpParameters parameters = sender.getParameters();
+                //parameters.encodings.get(0).maxBitrateBps = 10 * 1000 * 1000;
+                //sender.setParameters(parameters);
             }
         }, answer);
     }

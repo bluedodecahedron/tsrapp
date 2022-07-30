@@ -12,8 +12,11 @@ import java.time.temporal.ChronoUnit;
 import java.util.function.Consumer;
 
 public class SimpleSurfaceView extends SurfaceViewRenderer {
-    private LocalDateTime lastFrameTime = LocalDateTime.now();
+    private static final int UPDATE_DELAY = 1000;
+    private LocalDateTime lastUpdateTime = LocalDateTime.now();
+    private int frame_counter = 0;
     private Consumer<Float> updateFpsUi;
+    private Runnable updateBandwithUi;
     private String TAG;
 
     public SimpleSurfaceView(Context context) {
@@ -26,9 +29,13 @@ public class SimpleSurfaceView extends SurfaceViewRenderer {
 
     @Override
     public void onFrame(VideoFrame frame) {
-        Log.d(TAG, "New SurfaceView frame");
+        //Log.d(TAG, "New SurfaceView frame");
         if(this.updateFpsUi != null && this.TAG != null) {
-            updateFpsCounter();
+            frame_counter++;
+            if(ChronoUnit.MILLIS.between(lastUpdateTime, LocalDateTime.now()) > UPDATE_DELAY) {
+                updateFpsCounter();
+                frame_counter = 0;
+            }
         }
         super.onFrame(frame);
     }
@@ -37,13 +44,19 @@ public class SimpleSurfaceView extends SurfaceViewRenderer {
         this.updateFpsUi = updateFpsUi;
     }
 
+    public void setUpdateBandwithUi(Runnable updateBandwithUi) {
+        this.updateBandwithUi = updateBandwithUi;
+    }
+
     public void setTAG(String TAG) {
         this.TAG = TAG;
     }
 
     private void updateFpsCounter() {
-        Float fps = 1000.0F/ ChronoUnit.MILLIS.between(lastFrameTime, LocalDateTime.now());
-        lastFrameTime = LocalDateTime.now();
+        Float delay = ChronoUnit.MILLIS.between(lastUpdateTime, LocalDateTime.now()) / 1000.0F;
+        Float fps = frame_counter / delay;
+        lastUpdateTime = LocalDateTime.now();
         updateFpsUi.accept(fps);
+        updateBandwithUi.run();
     }
 }
