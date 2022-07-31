@@ -1,4 +1,4 @@
-package com.example.frontend.activity.tsdr.webrtc;
+package com.example.frontend.activity.tsdr.webrtc.observers;
 
 import org.webrtc.CapturerObserver;
 import org.webrtc.VideoFrame;
@@ -6,12 +6,12 @@ import org.webrtc.VideoFrame;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
-public class SimpleCapturerObserver implements CapturerObserver {
+public class CustomCapturerObserver implements CapturerObserver {
     private final CapturerObserver capturerObserver;
     private LocalDateTime lastFrameTime;
     private static final int MAX_FPS = 15;
 
-    public SimpleCapturerObserver(CapturerObserver capturerObserver) {
+    public CustomCapturerObserver(CapturerObserver capturerObserver) {
         this.capturerObserver = capturerObserver;
         this.lastFrameTime = LocalDateTime.now();
 

@@ -1,9 +1,9 @@
-package com.example.frontend.activity.tsdr.webrtc;
+package com.example.frontend.activity.tsdr.webrtc.observers;
 
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
 
-public class SimpleSdpObserver implements SdpObserver {
+public class CustomSdpObserver implements SdpObserver {
 
     @Override
     public void onCreateSuccess(SessionDescription sessionDescription) {

@@ -1,4 +1,4 @@
-package com.example.frontend.activity.tsdr.webrtc;
+package com.example.frontend.activity.tsdr.webrtc.observers;
 
 import android.util.Log;
 
@@ -16,12 +16,12 @@ import org.webrtc.VideoTrack;
 
 import java.util.Arrays;
 
-public class SimplePeerConnectionObserver implements PeerConnection.Observer {
+public class CustomPeerConnectionObserver implements PeerConnection.Observer {
     private final String TAG;
     private final ActivityWebrtcBinding binding;
     private final Runnable onIceGatheringComplete;
 
-    public SimplePeerConnectionObserver(String TAG, ActivityWebrtcBinding binding, Runnable onIceGatheringComplete) {
+    public CustomPeerConnectionObserver(String TAG, ActivityWebrtcBinding binding, Runnable onIceGatheringComplete) {
         super();
         this.TAG = TAG;
         this.binding = binding;
@@ -54,20 +54,6 @@ public class SimplePeerConnectionObserver implements PeerConnection.Observer {
     @Override
     public void onIceCandidate(IceCandidate iceCandidate) {
         Log.i(TAG, "onIceCandidate: " + iceCandidate);
-
-        JSONObject message = new JSONObject();
-
-        try {
-            message.put("type", "candidate");
-            message.put("label", iceCandidate.sdpMLineIndex);
-            message.put("id", iceCandidate.sdpMid);
-            message.put("candidate", iceCandidate.sdp);
-
-            //Log.i(TAG, "onIceCandidate: sending candidate " + message);
-            //sendMessage(message);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
@@ -102,7 +88,7 @@ public class SimplePeerConnectionObserver implements PeerConnection.Observer {
         if (track instanceof VideoTrack) {
             VideoTrack remoteVideoTrack = (VideoTrack) track;
             remoteVideoTrack.setEnabled(true);
-            remoteVideoTrack.addSink(binding.surfaceView2);
+            remoteVideoTrack.addSink(binding.surfaceRenderer);
         }
     }
 }
