@@ -5,6 +5,8 @@ import asyncio
 import logging
 import time
 import uuid
+
+import aiortc.codecs.vpx
 import cv2
 import app.apps.tsdr.services as services
 
@@ -15,6 +17,10 @@ from aiortc.contrib.media import MediaBlackhole, MediaRecorder, MediaRelay
 
 logger = logging.getLogger('backend')
 
+aiortc.codecs.vpx.MIN_BITRATE = 500000
+aiortc.codecs.vpx.DEFAULT_BITRATE = 2000000
+aiortc.codecs.vpx.MAX_BITRATE = 4000000
+aiortc.codecs.vpx.MAX_FRAME_RATE = 15
 pcs = set()
 relay = MediaRelay()
 
@@ -48,10 +54,11 @@ class VideoTransformTrack(MediaStreamTrack):
 
     kind = "video"
 
-    def __init__(self, track, transform):
+    def __init__(self, track, transform, pc):
         super().__init__()  # don't forget this!
         self.track = track
         self.transform = transform
+        self.pc = pc
 
     async def recv(self):
         frame = await self.track.recv()
@@ -89,6 +96,10 @@ class VideoTransformTrack(MediaStreamTrack):
             services.save_result(img)
             # print frame processing time
             logger.info("Frame processing took: {:.4f}s".format(time.perf_counter() - start_time))
+            # print pc stats
+            sender = self.pc.getSenders()[0]
+            stats = await sender.getStats()
+            logger.info("Sender stats: \n" + str(stats))
 
         return new_frame
 
@@ -123,6 +134,10 @@ async def offer(offer_schema):
         if pc.connectionState == "failed":
             await pc.close()
             pcs.discard(pc)
+        elif pc.connectionState == "connected":
+            sender = pc.getSenders()[0]
+            stats = await sender.getStats()
+            logger.info("Sender stats: \n" + str(stats))
 
     @pc.on("track")
     def on_track(track):
@@ -131,7 +146,7 @@ async def offer(offer_schema):
         if track.kind == "video":
             pc.addTrack(
                 VideoTransformTrack(
-                    relay.subscribe(track), transform=offer_schema.video_transform
+                    relay.subscribe(track), transform=offer_schema.video_transform, pc=pc
                 )
             )
             if record_to:
@@ -144,11 +159,13 @@ async def offer(offer_schema):
 
     # handle offer
     await pc.setRemoteDescription(offer)
+    logger.info("OFFER SDP: \n" + offer.sdp)
     await recorder.start()
 
     # send answer
     answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
+    logger.info("ANSWER SDP: \n" + offer.sdp)
 
     sdp = {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
     return sdp
