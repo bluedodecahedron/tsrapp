@@ -88,41 +88,95 @@ public class StatisticsRenderer {
 
     public void onStatsDelivered(RTCStatsReport rtcStatsReport) {
         Log.i(TAG, "PeerConnection Stats Report: \n" + rtcStatsReport);
+        BigInteger downloadRate = BigInteger.ZERO;
+        BigInteger uploadRate = BigInteger.ZERO;
+        Long outboundFrameWidth = 0L;
+        Long outboundFrameHeight = 0L;
+        Long inboundFrameWidth = 0L;
+        Long inboundFrameHeight = 0L;
+        Double outboundFramesPerSecond = 0D;
+        Double inboundFramesPerSecond = 0D;
+        String outboundQualityLimitationReason = "";
+
+        long updateDelay = ChronoUnit.MILLIS.between(lastBandwidthUpdate, LocalDateTime.now());
+        lastBandwidthUpdate = LocalDateTime.now();
+
         Map<String, RTCStats> statsmap = rtcStatsReport.getStatsMap();
         for(RTCStats rtcStats : statsmap.values()) {
-            if (rtcStats.getType().equals("candidate-pair")) {
+            if (rtcStats.getType().equals("inbound-rtp")) {
+                Log.i(TAG, "Inbound-RTP Stats: " + rtcStats);
+
                 Map<String, Object> members = rtcStats.getMembers();
-                String state = (String)members.get("state");
-                if(state != null && state.equals("succeeded")) {
-                    Log.i(TAG, "Succeeded Candidate Stats: " + rtcStats);
-                    BigInteger bytesSent = (BigInteger) members.get("bytesSent");
-                    BigInteger bytesReceived = (BigInteger) members.get("bytesReceived");
-                    if(bytesSent != null && bytesReceived != null) {
-                        BigInteger bytesSentDiff = bytesSent.subtract(StatisticsRenderer.this.bytesSent);
-                        BigInteger bytesReceivedDiff = bytesReceived.subtract(StatisticsRenderer.this.bytesReceived);
-                        long updateDelay = ChronoUnit.MILLIS.between(lastBandwidthUpdate, LocalDateTime.now());
-                        //dividing bytes by milliseconds is the same as dividing kilobytes by seconds
-                        BigInteger uploadRate = bytesSentDiff.divide(BigInteger.valueOf(updateDelay));
-                        BigInteger downloadRate = bytesReceivedDiff.divide(BigInteger.valueOf(updateDelay));
+                BigInteger bytesReceived = (BigInteger) members.get("bytesReceived");
+                if(bytesReceived != null) {
+                    BigInteger bytesReceivedDiff = bytesReceived.subtract(StatisticsRenderer.this.bytesReceived);
+                    //dividing bytes by milliseconds is the same as dividing kilobytes by seconds
+                    downloadRate = bytesReceivedDiff.divide(BigInteger.valueOf(updateDelay));
 
-                        StatisticsRenderer.this.bytesSent = bytesSent;
-                        StatisticsRenderer.this.bytesReceived = bytesReceived;
-                        lastBandwidthUpdate = LocalDateTime.now();
+                    StatisticsRenderer.this.bytesReceived = bytesReceived;
+                }
+                Long frameWidth = (Long) members.get("frameWidth");
+                Long frameHeight = (Long) members.get("frameHeight");
+                Double framesPerSecond = (Double) members.get("framesPerSecond");
+                if(frameWidth != null || frameHeight != null) {
+                    inboundFrameWidth = frameWidth;
+                    inboundFrameHeight = frameHeight;
+                    inboundFramesPerSecond = framesPerSecond;
+                }
+            }
 
-                        updateBandwidthUi(downloadRate, uploadRate);
-                    }
+            if (rtcStats.getType().equals("outbound-rtp")) {
+                Log.i(TAG, "Outbound-RTP Stats: " + rtcStats);
+
+                Map<String, Object> members = rtcStats.getMembers();
+                BigInteger bytesSent = (BigInteger) members.get("bytesSent");
+                if(bytesSent != null) {
+                    BigInteger bytesSentDiff = bytesSent.subtract(StatisticsRenderer.this.bytesSent);
+                    //dividing bytes by milliseconds is the same as dividing kilobytes by seconds
+                    uploadRate = bytesSentDiff.divide(BigInteger.valueOf(updateDelay));
+
+                    StatisticsRenderer.this.bytesSent = bytesSent;
+                }
+                Long frameWidth = (Long) members.get("frameWidth");
+                Long frameHeight = (Long) members.get("frameHeight");
+                Double framesPerSecond = (Double) members.get("framesPerSecond");
+                String qualityLimitationReason = (String) members.get("qualityLimitationReason");
+                if(frameWidth != null || frameHeight != null) {
+                    outboundFrameWidth = frameWidth;
+                    outboundFrameHeight = frameHeight;
+                    outboundFramesPerSecond = framesPerSecond;
+                    outboundQualityLimitationReason = qualityLimitationReason;
                 }
             }
         }
+
+        updateUi(downloadRate, uploadRate, outboundFrameWidth, outboundFrameHeight, inboundFrameWidth, inboundFrameHeight, outboundFramesPerSecond, inboundFramesPerSecond, outboundQualityLimitationReason);
     }
 
-    private void updateBandwidthUi(BigInteger downloadRate, BigInteger uploadRate) {
+    private void updateUi(BigInteger downloadRate, BigInteger uploadRate, Long outboundFrameWidth, Long outboundFrameHeight, Long inboundFrameWidth, Long inboundFrameHeight, Double outboundFramesPerSecond, Double inboundFramesPerSecond, String outboundQualityLimitationReason) {
         Log.i(TAG, "Download: " + downloadRate + "kbps, Upload: " + uploadRate + " kbps");
         //runOnUiThread because only the original thread that created a view hierarchy can touch its views
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                binding.bandwidth.setText(activity.getString(R.string.bandwidth, downloadRate, uploadRate));
+                binding.bandwidth.setText(activity.getString(
+                        R.string.bandwidth,
+                        uploadRate,
+                        outboundFramesPerSecond.toString(),
+                        downloadRate,
+                        inboundFramesPerSecond.toString()
+                ));
+                binding.frameSize.setText(activity.getString(
+                        R.string.frameSize,
+                        outboundFrameWidth.toString(),
+                        outboundFrameHeight.toString(),
+                        inboundFrameWidth.toString(),
+                        inboundFrameHeight.toString()
+                ));
+                binding.qualityLimitationReason.setText(activity.getString(
+                        R.string.qualityLimitationReason,
+                        outboundQualityLimitationReason
+                ));
             }
         });
     }

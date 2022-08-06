@@ -268,6 +268,7 @@ public class WebrtcActivity extends AppCompatActivity {
         videoCapturer.startCapture(VIDEO_RESOLUTION_WIDTH, VIDEO_RESOLUTION_HEIGHT, FPS);
     }
 
+
     @Override
     protected void onPause() {
         super.onPause();
