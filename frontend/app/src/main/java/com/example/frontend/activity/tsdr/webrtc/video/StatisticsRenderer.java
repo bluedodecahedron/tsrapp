@@ -87,12 +87,14 @@ public class StatisticsRenderer {
     }
 
     public void onStatsDelivered(RTCStatsReport rtcStatsReport) {
+        Log.i(TAG, "PeerConnection Stats Report: \n" + rtcStatsReport);
         Map<String, RTCStats> statsmap = rtcStatsReport.getStatsMap();
         for(RTCStats rtcStats : statsmap.values()) {
             if (rtcStats.getType().equals("candidate-pair")) {
                 Map<String, Object> members = rtcStats.getMembers();
                 String state = (String)members.get("state");
                 if(state != null && state.equals("succeeded")) {
+                    Log.i(TAG, "Succeeded Candidate Stats: " + rtcStats);
                     BigInteger bytesSent = (BigInteger) members.get("bytesSent");
                     BigInteger bytesReceived = (BigInteger) members.get("bytesReceived");
                     if(bytesSent != null && bytesReceived != null) {

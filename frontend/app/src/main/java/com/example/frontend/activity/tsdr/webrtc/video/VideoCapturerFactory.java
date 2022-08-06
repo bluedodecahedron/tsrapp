@@ -6,6 +6,7 @@ import android.util.Log;
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
+import org.webrtc.CameraVideoCapturer;
 import org.webrtc.VideoCapturer;
 
 public class VideoCapturerFactory {

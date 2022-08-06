@@ -3,6 +3,7 @@ package com.example.frontend.activity.tsdr.webrtc;
 import android.Manifest;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -25,6 +26,7 @@ import org.webrtc.EglBase;
 import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
+import org.webrtc.RendererCommon;
 import org.webrtc.SessionDescription;
 import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.VideoCapturer;
@@ -43,14 +45,16 @@ public class WebrtcActivity extends AppCompatActivity {
     private static final String TAG = WebrtcActivity.class.getSimpleName();
     private static final int RC_CALL = 120;
     public static final String VIDEO_TRACK_ID = "ARDAMSv0";
-    public static final int VIDEO_RESOLUTION_WIDTH = 720;
-    public static final int VIDEO_RESOLUTION_HEIGHT = 480;
-    public static final int FPS = 60;
+    public static final int VIDEO_RESOLUTION_WIDTH = 800; // Video capturer chooses the next closest supported resolution for the device
+    public static final int VIDEO_RESOLUTION_HEIGHT = 500;
+    public static final int FPS = 15; // Video capturer chooses the next closest supported fps value for the device
 
     private ActivityWebrtcBinding binding;
     private PeerConnection localPeerConnection;
     private EglBase rootEglBase;
     private PeerConnectionFactory factory;
+    private SurfaceTextureHelper surfaceTextureHelper;
+    private VideoCapturer videoCapturer;
     private VideoTrack videoTrackFromCamera;
 
     private StatisticsRenderer statsRenderer;
@@ -99,7 +103,7 @@ public class WebrtcActivity extends AppCompatActivity {
         rootEglBase = EglBase.create();
 
         binding.surfaceRenderer.init(rootEglBase.getEglBaseContext(), null);
-        //binding.surfaceRenderer.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL); //NEW
+        binding.surfaceRenderer.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL); //NEW
         binding.surfaceRenderer.setEnableHardwareScaler(true);
         binding.surfaceRenderer.setMirror(false);
         binding.surfaceRenderer.setTAG(TAG);
@@ -129,9 +133,9 @@ public class WebrtcActivity extends AppCompatActivity {
 
     private void createVideoTrackFromCamera() {
         VideoCapturerFactory videoCapturerFactory = new VideoCapturerFactory(TAG, this);
-        VideoCapturer videoCapturer = videoCapturerFactory.createVideoCapturer();
+        videoCapturer = videoCapturerFactory.createVideoCapturer();
 
-        SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create("CaptureThread", rootEglBase.getEglBaseContext());
+        surfaceTextureHelper = SurfaceTextureHelper.create("CaptureThread", rootEglBase.getEglBaseContext());
         VideoSource videoSource = factory.createVideoSource(false);
         videoCapturer.initialize(surfaceTextureHelper, this, new CustomCapturerObserver(videoSource.getCapturerObserver()));
 
@@ -144,7 +148,7 @@ public class WebrtcActivity extends AppCompatActivity {
 
     private void initializePeerConnection() {
         localPeerConnection = createPeerConnection(factory);
-        localPeerConnection.setBitrate(1000000,2000000,10000000);
+        localPeerConnection.setBitrate(500000,2000000,4000000);
         statsRenderer = new StatisticsRenderer(this, binding, localPeerConnection, TAG);
         binding.surfaceRenderer.setStatsRenderer(statsRenderer);
     }
@@ -160,8 +164,12 @@ public class WebrtcActivity extends AppCompatActivity {
         iceServers.add(new PeerConnection.IceServer(URL));
 
         PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServers);
+        //rtcConfig.allowCodecSwitching = false;
         //rtcConfig.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
-        rtcConfig.keyType = PeerConnection.KeyType.ECDSA;
+        //rtcConfig.keyType = PeerConnection.KeyType.ECDSA;
+        //rtcConfig.suspendBelowMinBitrate = false;
+        //rtcConfig.networkPreference = PeerConnection.AdapterType.WIFI;
+        //rtcConfig.candidateNetworkPolicy = PeerConnection.CandidateNetworkPolicy.LOW_COST;
 
         PeerConnection.Observer pcObserver = new CustomPeerConnectionObserver(TAG, binding, this::onIceGatheringComplete);
 
@@ -216,6 +224,9 @@ public class WebrtcActivity extends AppCompatActivity {
                 //After successful setting of remote description, video sending begins
                 //When analyzed video was received from server, the function onAddTrack in PeerConnectionObserver is triggered
                 Log.i(TAG, "onSetSuccess: SDP Answer: " + localPeerConnection.getRemoteDescription().type + " \n" + localPeerConnection.getRemoteDescription().description);
+
+                //RtpSender sender = localPeerConnection.getSenders().get(0);
+                //RtpParameters.Encoding encoding = sender.getParameters().encodings.get(0);
             }
         }, answer);
     }
@@ -228,4 +239,42 @@ public class WebrtcActivity extends AppCompatActivity {
         Toast.makeText(this, "Request failed. Bad connection?", Toast.LENGTH_SHORT).show();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.i(TAG, "Destroying WebRTC Activity");
+        closeConnection();
+        //message.put("userId", RTCSignalClient.getInstance().getUserId());
+        //RTCSignalClient.getInstance().sendMessage(message);
+        binding.surfaceRenderer.release();
+        videoCapturer.dispose();
+        surfaceTextureHelper.dispose();
+        PeerConnectionFactory.stopInternalTracingCapture();
+        PeerConnectionFactory.shutdownInternalTracer();
+    }
+
+    private void closeConnection() {
+        Log.i(TAG, ("Closing Peer Connection"));
+        if (localPeerConnection == null) {
+            return;
+        }
+        localPeerConnection.close();
+        localPeerConnection = null;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        videoCapturer.startCapture(VIDEO_RESOLUTION_WIDTH, VIDEO_RESOLUTION_HEIGHT, FPS);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        try {
+            videoCapturer.stopCapture();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 }
