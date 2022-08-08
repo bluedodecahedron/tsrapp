@@ -3,7 +3,8 @@
     <string name="perm_denied">App cannot operate\n without camera\n permissions</string>
     <string name="fps_counter">%1$.1f FPS</string>
     <string name="bandwidth">"Upload: %1$s kBps (%2$s fps), Download: %3$s kBps (%4$s fps)"</string>
-    <string name="frameSize">"frame size: %1$s:%2$s (out), %3$s:%4$s (in)"</string>
+    <string name="frameSize">"Frame Size: %1$s:%2$s (out), %3$s:%4$s (in)"</string>
     <string name="qualityLimitationReason">"Quality Limitation Reason: %1$s"</string>
+    <string name="latencyEstimate">"Latency Estimate: %1$.0f ms"</string>
 
 </resources>

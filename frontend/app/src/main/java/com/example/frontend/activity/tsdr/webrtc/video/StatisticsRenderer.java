@@ -20,6 +20,9 @@ import java.util.TimerTask;
 public class StatisticsRenderer extends TimerTask {
     private BigInteger bytesSent = BigInteger.ZERO;
     private BigInteger bytesReceived = BigInteger.ZERO;
+    private Double jitterBufferDelay = 0D;
+    private BigInteger jitterBufferEmittedCount = BigInteger.ZERO;
+
     private LocalDateTime lastBandwidthUpdate = LocalDateTime.now();
     private LocalDateTime lastFpsUpdate = LocalDateTime.now();
     private int frame_counter = 0;
@@ -94,6 +97,9 @@ public class StatisticsRenderer extends TimerTask {
         Double outboundFramesPerSecond = 0D;
         Double inboundFramesPerSecond = 0D;
         String outboundQualityLimitationReason = "";
+        Double jitterBufferDelay = null;
+        BigInteger jitterBufferEmittedCount = null;
+        Double latencyEstimate = 0D;
 
         long updateDelay = ChronoUnit.MILLIS.between(lastBandwidthUpdate, LocalDateTime.now());
         lastBandwidthUpdate = LocalDateTime.now();
@@ -115,7 +121,7 @@ public class StatisticsRenderer extends TimerTask {
                 Long frameWidth = (Long) members.get("frameWidth");
                 Long frameHeight = (Long) members.get("frameHeight");
                 Double framesPerSecond = (Double) members.get("framesPerSecond");
-                if(frameWidth != null || frameHeight != null) {
+                if(frameWidth != null && frameHeight != null && framesPerSecond != null) {
                     inboundFrameWidth = frameWidth;
                     inboundFrameHeight = frameHeight;
                     inboundFramesPerSecond = framesPerSecond;
@@ -138,19 +144,38 @@ public class StatisticsRenderer extends TimerTask {
                 Long frameHeight = (Long) members.get("frameHeight");
                 Double framesPerSecond = (Double) members.get("framesPerSecond");
                 String qualityLimitationReason = (String) members.get("qualityLimitationReason");
-                if(frameWidth != null || frameHeight != null) {
+                if(frameWidth != null && frameHeight != null && framesPerSecond != null && qualityLimitationReason != null) {
                     outboundFrameWidth = frameWidth;
                     outboundFrameHeight = frameHeight;
                     outboundFramesPerSecond = framesPerSecond;
                     outboundQualityLimitationReason = qualityLimitationReason;
                 }
             }
+
+            if (rtcStats.getType().equals("track")) {
+                Log.i(TAG, "Track Stats: " + rtcStats);
+
+                Map<String, Object> members = rtcStats.getMembers();
+                //check if track is a receiver
+                if(members.containsKey("jitterBufferDelay")) {
+                    jitterBufferDelay = (Double) members.get("jitterBufferDelay");
+                    jitterBufferEmittedCount = (BigInteger) members.get("jitterBufferEmittedCount");
+                }
+            }
+
         }
 
-        updateUi(downloadRate, uploadRate, outboundFrameWidth, outboundFrameHeight, inboundFrameWidth, inboundFrameHeight, outboundFramesPerSecond, inboundFramesPerSecond, outboundQualityLimitationReason);
+        if(jitterBufferDelay != null && jitterBufferEmittedCount != null) {
+            Double jitterBufferDelayDelta = jitterBufferDelay - this.jitterBufferDelay;
+            Integer jitterBufferEmittedCountDelta = jitterBufferEmittedCount.subtract(this.jitterBufferEmittedCount).intValue();
+            latencyEstimate = jitterBufferDelayDelta / jitterBufferEmittedCountDelta;
+            latencyEstimate = latencyEstimate * 1000;
+        }
+
+        updateUi(downloadRate, uploadRate, outboundFrameWidth, outboundFrameHeight, inboundFrameWidth, inboundFrameHeight, outboundFramesPerSecond, inboundFramesPerSecond, outboundQualityLimitationReason, latencyEstimate);
     }
 
-    private void updateUi(BigInteger downloadRate, BigInteger uploadRate, Long outboundFrameWidth, Long outboundFrameHeight, Long inboundFrameWidth, Long inboundFrameHeight, Double outboundFramesPerSecond, Double inboundFramesPerSecond, String outboundQualityLimitationReason) {
+    private void updateUi(BigInteger downloadRate, BigInteger uploadRate, Long outboundFrameWidth, Long outboundFrameHeight, Long inboundFrameWidth, Long inboundFrameHeight, Double outboundFramesPerSecond, Double inboundFramesPerSecond, String outboundQualityLimitationReason, Double latencyEstimate) {
         Log.i(TAG, "Download: " + downloadRate + "kbps, Upload: " + uploadRate + " kbps");
         //runOnUiThread because only the original thread that created a view hierarchy can touch its views
         activity.runOnUiThread(new Runnable() {
@@ -173,6 +198,10 @@ public class StatisticsRenderer extends TimerTask {
                 binding.qualityLimitationReason.setText(activity.getString(
                         R.string.qualityLimitationReason,
                         outboundQualityLimitationReason
+                ));
+                binding.latencyEstimate.setText(activity.getString(
+                        R.string.latencyEstimate,
+                        latencyEstimate
                 ));
             }
         });
