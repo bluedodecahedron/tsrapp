@@ -35,7 +35,11 @@ import org.webrtc.VideoEncoderFactory;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
@@ -227,6 +231,9 @@ public class WebrtcActivity extends AppCompatActivity {
 
                 //RtpSender sender = localPeerConnection.getSenders().get(0);
                 //RtpParameters.Encoding encoding = sender.getParameters().encodings.get(0);
+
+                Timer timer = new Timer();
+                timer.schedule(statsRenderer, new Date(), 1000);
             }
         }, answer);
     }

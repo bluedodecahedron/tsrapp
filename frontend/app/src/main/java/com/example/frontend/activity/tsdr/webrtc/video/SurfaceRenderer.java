@@ -31,9 +31,6 @@ public class SurfaceRenderer extends SurfaceViewRenderer {
         //Log.d(TAG, "New SurfaceView frame");
         if(statsRenderer != null) {
             statsRenderer.incrementFrameCounter();
-            if(statsRenderer.isUpdate()) {
-                statsRenderer.update();
-            }
         }
         super.onFrame(frame);
     }

@@ -15,13 +15,11 @@ import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.TimerTask;
 
-public class StatisticsRenderer {
-    private static final int UPDATE_DELAY = 1000;
-
+public class StatisticsRenderer extends TimerTask {
     private BigInteger bytesSent = BigInteger.ZERO;
     private BigInteger bytesReceived = BigInteger.ZERO;
-    private LocalDateTime lastUpdate = LocalDateTime.now();
     private LocalDateTime lastBandwidthUpdate = LocalDateTime.now();
     private LocalDateTime lastFpsUpdate = LocalDateTime.now();
     private int frame_counter = 0;
@@ -38,13 +36,12 @@ public class StatisticsRenderer {
         this.TAG = TAG;
     }
 
-    public boolean isUpdate() {
-        long timeSinceUpdate = ChronoUnit.MILLIS.between(lastUpdate, LocalDateTime.now());
-        return timeSinceUpdate > UPDATE_DELAY;
+    @Override
+    public void run() {
+        update();
     }
 
     public void update() {
-        lastUpdate = LocalDateTime.now();
         updateFps();
         updateBandwidth();
     }
