@@ -13,5 +13,6 @@ app/apps/__pycache__/
 app/apps/*/__pycache__/
 
 backend/public_hosts.txt
-
+resources/gtsdb_best_ckpt.pth
+resources/model.pth
 
