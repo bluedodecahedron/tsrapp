@@ -5,7 +5,6 @@ import logging
 import os
 import time
 from datetime import datetime
-from app.apps.tsdr.InferResult import InferResultList
 
 import yolox.tools.demo as tsd_demo
 import yolox.exp.example.custom.yolox_s_gtsdb as gtsdb
