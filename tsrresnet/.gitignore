@@ -1,0 +1,7 @@
+build
+input/GTSRB_Final_Test_Images/GTSRB
+input/GTSRB_Final_Training_Images/GTSRB
+input/GTSRB_Final_Test_Images.zip
+input/GTSRB_Final_Training_Images.zip
+tsrresnet.egg-info
+outputs/test_results/*
