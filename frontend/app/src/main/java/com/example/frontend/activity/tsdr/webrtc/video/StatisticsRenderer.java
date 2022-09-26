@@ -22,6 +22,8 @@ public class StatisticsRenderer extends TimerTask {
     private BigInteger bytesReceived = BigInteger.ZERO;
     private Double jitterBufferDelay = 0D;
     private BigInteger jitterBufferEmittedCount = BigInteger.ZERO;
+    private Double totalPacketSendDelay = 0D;
+    private Long packetsSent = 0L;
 
     private LocalDateTime lastBandwidthUpdate = LocalDateTime.now();
     private LocalDateTime lastFpsUpdate = LocalDateTime.now();
@@ -99,6 +101,9 @@ public class StatisticsRenderer extends TimerTask {
         String outboundQualityLimitationReason = "";
         Double jitterBufferDelay = null;
         BigInteger jitterBufferEmittedCount = null;
+        Double totalPacketSendDelay = null;
+        Long packetsSent = null;
+        Double roundTripTime = null;
         Double latencyEstimate = 0D;
 
         long updateDelay = ChronoUnit.MILLIS.between(lastBandwidthUpdate, LocalDateTime.now());
@@ -140,6 +145,7 @@ public class StatisticsRenderer extends TimerTask {
 
                     StatisticsRenderer.this.bytesSent = bytesSent;
                 }
+
                 Long frameWidth = (Long) members.get("frameWidth");
                 Long frameHeight = (Long) members.get("frameHeight");
                 Double framesPerSecond = (Double) members.get("framesPerSecond");
@@ -150,6 +156,9 @@ public class StatisticsRenderer extends TimerTask {
                     outboundFramesPerSecond = framesPerSecond;
                     outboundQualityLimitationReason = qualityLimitationReason;
                 }
+
+                totalPacketSendDelay = (Double) members.get("totalPacketSendDelay");
+                packetsSent = (Long) members.get("packetsSent");
             }
 
             if (rtcStats.getType().equals("track")) {
@@ -163,13 +172,31 @@ public class StatisticsRenderer extends TimerTask {
                 }
             }
 
+            if(rtcStats.getType().equals("remote-inbound-rtp")) {
+                Log.i(TAG, "Remote-Inbound-RTP Stats: " + rtcStats);
+
+                Map<String, Object> members = rtcStats.getMembers();
+                roundTripTime = (Double) members.get("roundTripTime");
+            }
+
         }
 
-        if(jitterBufferDelay != null && jitterBufferEmittedCount != null) {
+        if(jitterBufferDelay != null && jitterBufferEmittedCount != null && roundTripTime != null && packetsSent != null && totalPacketSendDelay != null) {
             Double jitterBufferDelayDelta = jitterBufferDelay - this.jitterBufferDelay;
             Integer jitterBufferEmittedCountDelta = jitterBufferEmittedCount.subtract(this.jitterBufferEmittedCount).intValue();
-            latencyEstimate = jitterBufferDelayDelta / jitterBufferEmittedCountDelta;
-            latencyEstimate = latencyEstimate * 1000;
+            this.jitterBufferDelay = jitterBufferDelay;
+            this.jitterBufferEmittedCount = jitterBufferEmittedCount;
+
+            Double packetSendDelayDelta = totalPacketSendDelay - this.totalPacketSendDelay;
+            Long packtsSentDelta = packetsSent - this.packetsSent;
+            this.totalPacketSendDelay = totalPacketSendDelay;
+            this.packetsSent = packetsSent;
+
+            latencyEstimate += (jitterBufferDelayDelta / jitterBufferEmittedCountDelta) * 1000 * 2; //account for jitter delay on client and server
+            latencyEstimate += (packetSendDelayDelta / packtsSentDelta) * 1000 * 2; //account for packet send delay on client and server
+            latencyEstimate += roundTripTime; //account for round trip time
+            latencyEstimate += 20; //account for encoding and decoding time on client and server
+            latencyEstimate += 150; //account for download and upload time
         }
 
         updateUi(downloadRate, uploadRate, outboundFrameWidth, outboundFrameHeight, inboundFrameWidth, inboundFrameHeight, outboundFramesPerSecond, inboundFramesPerSecond, outboundQualityLimitationReason, latencyEstimate);
