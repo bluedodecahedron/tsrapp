@@ -5,6 +5,7 @@ import asyncio
 import logging
 import time
 import uuid
+import traceback
 
 import aiortc.codecs.vpx
 import cv2
@@ -61,14 +62,17 @@ class VideoTransformTrack(MediaStreamTrack):
         self.pc = pc
 
     async def recv(self):
+        start_time = time.perf_counter()
         frame = await self.track.recv()
         img = frame.to_ndarray(format="bgr24")
-        start_time = time.perf_counter()
 
         # perform some sort of image processing
         if self.transform == "tsdr":
             # perform traffic sign detection
-            img = services.tsd(img)
+            try:
+                class_ids, img = services.tsdr(img)
+            except:
+                traceback.print_exc()
 
             # rebuild a VideoFrame, preserving timing information
             new_frame = VideoFrame.from_ndarray(img, format="bgr24")

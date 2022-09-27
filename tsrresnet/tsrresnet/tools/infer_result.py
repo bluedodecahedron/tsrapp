@@ -18,6 +18,12 @@ class InferResultList:
             infer_sum += result.infer_time
         return infer_sum
 
+    def get_class_ids(self):
+        class_list = []
+        for result in self.list:
+            class_list.append(result.class_idx)
+        return class_list
+
     def __str__(self):
         str_list = []
         for result in self.list:

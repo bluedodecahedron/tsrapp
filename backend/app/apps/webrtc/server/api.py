@@ -5,6 +5,7 @@ from ninja import Router
 from django.http import HttpResponse
 from app.apps.webrtc.server.schemas import OfferSchema, AnswerSchema, Detail
 from asgiref.sync import sync_to_async
+import asyncio
 
 requestLogger = logging.getLogger('django.request')
 router = Router()

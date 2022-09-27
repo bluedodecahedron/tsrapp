@@ -46,7 +46,7 @@ def save_result(result_image):
 def tsd(image):
     outputs, img_info = predictor.inference(image)
     result_image = predictor.visual(outputs[0], img_info, predictor.confthre)
-    boxes = predictor.boxes(outputs[0], img_info, predictor.confthre)
+    boxes = predictor.boxed_images(outputs[0], img_info, predictor.confthre)
 
     return boxes, result_image
 
@@ -71,9 +71,9 @@ def tsr(image):
 
 
 def tsdr(image):
+    start_time = time.time()
     boxes, tsd_image = tsd(image)
     infer_result_list = tsr_result.InferResultList()
-    start_time = time.time()
     for box in boxes:
         infer_result = tsr(box)
         infer_result_list.append(infer_result)
@@ -81,3 +81,4 @@ def tsdr(image):
     tsdr_infer_time = end_time - start_time
     logger.info(f"Identified Classes ({infer_result_list.infer_sum():.4f}s): {str(infer_result_list)}")
     logger.info(f"TSDR (Detection+Recognition) infer time: {tsdr_infer_time:.4f}s")
+    return infer_result_list.get_class_ids(), tsd_image
