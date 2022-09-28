@@ -37,7 +37,7 @@ transform = A.Compose([
     ])
 
 
-def predict_class(image):
+def predict_class(image, confthre=0.0):
     # Read the image.
     # image = cv2.imread(image_path)
     orig_image = image.copy()
@@ -60,4 +60,4 @@ def predict_class(image):
     class_idx = topk(probs, 1)[1].int()
     # Get the current fps.
     infer_time = end_time - start_time
-    return InferResult(class_idx, top_prob, infer_time)
+    return InferResult(class_idx, top_prob, infer_time, confthre)

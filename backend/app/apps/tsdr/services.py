@@ -6,10 +6,15 @@ import os
 import time
 from datetime import datetime
 
+from app.apps.tsdr.tsdr_result import TsdrResult
+
 import yolox.tools.demo as tsd_demo
+from yolox.tools.infer_result import InferResult as TsdResult
 import yolox.exp.example.custom.yolox_s_gtsdb as gtsdb
 import tsrresnet.tools.inference as tsr_infer
-import tsrresnet.tools.infer_result as tsr_result
+from tsrresnet.tools.infer_result import InferResult as TsrResult
+from tsrresnet.tools.infer_result import InferResultList as TsrResultList
+
 
 logger = logging.getLogger('backend')
 
@@ -44,11 +49,8 @@ def save_result(result_image):
 
 
 def tsd(image):
-    outputs, img_info = predictor.inference(image)
-    result_image = predictor.visual(outputs[0], img_info, predictor.confthre)
-    boxes = predictor.boxed_images(outputs[0], img_info, predictor.confthre)
-
-    return boxes, result_image
+    tsd_result = predictor.inference(image)
+    return tsd_result
 
 
 def tsd_file(image_file):
@@ -66,19 +68,21 @@ def tsd_file(image_file):
 
 
 def tsr(image):
-    class_str = tsr_infer.predict_class(image)
-    return class_str
+    tsr_result = tsr_infer.predict_class(image)
+    return tsr_result
 
 
 def tsdr(image):
     start_time = time.time()
-    boxes, tsd_image = tsd(image)
-    infer_result_list = tsr_result.InferResultList()
-    for box in boxes:
-        infer_result = tsr(box)
-        infer_result_list.append(infer_result)
+    tsd_result = tsd(image)
+    tsr_result_list = TsrResultList()
+    for box in tsd_result.get_boxed_images():
+        tsr_result = tsr(box)
+        tsr_result_list.append(tsr_result)
+    result_image = TsdrResult(tsd_result, tsr_result_list).visual()
+    save_result(result_image)
     end_time = time.time()
     tsdr_infer_time = end_time - start_time
-    logger.info(f"Identified Classes ({infer_result_list.infer_sum():.4f}s): {str(infer_result_list)}")
+    logger.info(f"Identified Classes ({tsr_result_list.infer_sum():.4f}s): {str(tsr_result_list)}")
     logger.info(f"TSDR (Detection+Recognition) infer time: {tsdr_infer_time:.4f}s")
-    return infer_result_list.get_class_ids(), tsd_image
+    return tsr_result_list.get_class_ids(), result_image
