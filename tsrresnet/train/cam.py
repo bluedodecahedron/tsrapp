@@ -90,8 +90,8 @@ def visualize_and_save_map(
         np.array(result, dtype=np.uint8), 
         np.array(orig_image, dtype=np.uint8)
     ])
-    #cv2.imshow('Result', img_concat)
-    #cv2.waitKey(1)
+    cv2.imshow('Result', img_concat)
+    cv2.waitKey(0)
     if save_name is not None:
         cv2.imwrite(f"../outputs/test_results/CAM_{save_name}.jpg", img_concat)
 
@@ -172,8 +172,9 @@ print(f"Total number of test images: {len(all_images)}")
 print(f"Total correct predictions: {correct_count}")
 print(f"Accuracy: {correct_count/len(all_images)*100:.3f}")
 
-# Close all frames and video windows.
-cv2.destroyAllWindows()
 # calculate and print the average FPS
 avg_fps = total_fps / frame_count
 print(f"Average FPS: {avg_fps:.3f}")
+
+# Close all frames and video windows.
+cv2.destroyAllWindows()

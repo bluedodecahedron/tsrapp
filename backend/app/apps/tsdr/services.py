@@ -68,7 +68,7 @@ def tsd_file(image_file):
 
 
 def tsr(image):
-    tsr_result = tsr_infer.predict_class(image)
+    tsr_result = tsr_infer.predict_class(image, confthre=0.9)
     return tsr_result
 
 

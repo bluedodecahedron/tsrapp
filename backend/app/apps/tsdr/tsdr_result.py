@@ -19,7 +19,7 @@ class TsdrResult:
         tsr_ids = self.tsr_result_list.get_class_ids()
         tsr_probs = self.tsr_result_list.get_class_probs()
         tsr_names = self.tsr_result_list.cls_names
-        tsr_conf = self.tsr_result_list
+        tsr_conf = self.tsr_result_list.confthre
         vis_res = self.vis(img, tsd_box_borders, tsd_ids, tsd_probs, tsd_names, tsd_conf, tsr_ids, tsr_probs, tsr_names, tsr_conf)
         return vis_res
 
@@ -38,28 +38,45 @@ class TsdrResult:
             x1 = int(box[2])
             y1 = int(box[3])
 
-            color = (_COLORS[tsr_id] * 255).astype(np.uint8).tolist()
+            rec_color = (_COLORS[tsr_id] * 255).astype(np.uint8).tolist()
+            alt_rec_color =  (_COLORS[79] * 255).astype(np.uint8).tolist()
             tsd_text = '{}: {:.1f}%'.format(tsd_names[tsd_id], tsd_prob * 100)
             tsr_text = '{}: {:.1f}%'.format(tsr_names[tsr_id], tsr_prob * 100)
+            alt_text = 'unknown sign'
             txt_color = (0, 0, 0) if np.mean(_COLORS[tsr_id]) > 0.5 else (255, 255, 255)
+            alt_color = (0, 0, 0) if np.mean(_COLORS[79]) > 0.5 else (255, 255, 255)
             font = cv2.FONT_HERSHEY_SIMPLEX
 
             tsd_txt_size = cv2.getTextSize(tsd_text, font, 0.4, 1)[0]
             tsr_txt_size = cv2.getTextSize(tsr_text, font, 0.4, 1)[0]
             txt_length = tsd_txt_size[0] if tsd_txt_size[0] > tsr_txt_size[0] else tsr_txt_size[0]
             txt_height = tsd_txt_size[1]
-            cv2.rectangle(img, (x0, y0), (x1, y1), color, 2)
 
             txt_bk_color = (_COLORS[tsr_id] * 255 * 0.7).astype(np.uint8).tolist()
-            cv2.rectangle(
-                img,
-                (x0, y0 - int(3.0*txt_height)),
-                (x0 + txt_length + 1, y0),
-                txt_bk_color,
-                -1
-            )
-            cv2.putText(img, tsd_text, (x0, y0 - int(2.0*txt_height)), font, 0.4, txt_color, thickness=1)
-            cv2.putText(img, tsr_text, (x0, y0 - int(0.5*txt_height)), font, 0.4, txt_color, thickness=1)
+            alt_bk_color = (_COLORS[79] * 255 * 0.7).astype(np.uint8).tolist()
+
+            if tsr_prob > tsr_conf:
+                cv2.rectangle(img, (x0, y0), (x1, y1), rec_color, 2)
+                cv2.rectangle(
+                    img,
+                    (x0, y0 - int(3.0*txt_height)),
+                    (x0 + txt_length + 1, y0),
+                    txt_bk_color,
+                    -1
+                )
+                cv2.putText(img, tsd_text, (x0, y0 - int(2.0*txt_height)), font, 0.4, txt_color, thickness=1)
+                cv2.putText(img, tsr_text, (x0, y0 - int(0.5*txt_height)), font, 0.4, txt_color, thickness=1)
+            else:
+                cv2.rectangle(img, (x0, y0), (x1, y1), alt_rec_color, 2)
+                cv2.rectangle(
+                    img,
+                    (x0, y0 - int(3.0*txt_height)),
+                    (x0 + txt_length + 1, y0),
+                    alt_bk_color,
+                    -1
+                )
+                cv2.putText(img, tsd_text, (x0, y0 - int(2.0*txt_height)), font, 0.4, alt_color, thickness=1)
+                cv2.putText(img, alt_text, (x0, y0 - int(0.5*txt_height)), font, 0.4, alt_color, thickness=1)
 
         return img
 
@@ -145,6 +162,6 @@ _COLORS = np.array(
         0.857, 0.857, 0.857,
         0.000, 0.447, 0.741,
         0.314, 0.717, 0.741,
-        0.50, 0.5, 0
+        0.0, 0.0, 0
     ]
 ).astype(np.float32).reshape(-1, 3)

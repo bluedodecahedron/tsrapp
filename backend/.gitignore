@@ -16,3 +16,7 @@ backend/public_hosts.txt
 resources/gtsdb_best_ckpt.pth
 resources/model.pth
 
+gtsdb_best_ckpt_old.pth
+app/apps/bla
+resources/instances_valid.json
+resources/valid
