@@ -77,6 +77,7 @@ def train(
     epoch_acc = 100. * (train_running_correct / len(trainloader.dataset))
     return epoch_loss, epoch_acc
 
+
 # Validation function.
 def validate(model, testloader, criterion, class_names):
     model.eval()
@@ -122,6 +123,7 @@ def validate(model, testloader, criterion, class_names):
         print(f"Accuracy of class {class_names[i]}: {100*class_correct[i]/class_total[i]}")
     print('\n')
     return epoch_loss, epoch_acc
+
 
 if __name__ == '__main__':
     # Load the training and validation datasets.

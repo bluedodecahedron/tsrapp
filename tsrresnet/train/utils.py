@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 matplotlib.style.use('ggplot')
 matplotlib.use('TkAgg')
 
+
 def save_model(epochs, model, optimizer, criterion):
     """
     Function to save the trained model to disk.
@@ -15,6 +16,7 @@ def save_model(epochs, model, optimizer, criterion):
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': criterion,
                 }, f"../outputs/model.pth")
+
 
 def save_plots(train_acc, valid_acc, train_loss, valid_loss):
     """

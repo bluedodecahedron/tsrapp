@@ -40,6 +40,7 @@ transform = A.Compose([
 def predict_class(image, confthre=0.0):
     # Read the image.
     # image = cv2.imread(image_path)
+    start_time = time.process_time()
     orig_image = image.copy()
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     height, width, _ = orig_image.shape
@@ -48,9 +49,7 @@ def predict_class(image, confthre=0.0):
     # Add batch dimension.
     image_tensor = image_tensor.unsqueeze(0)
     # Forward pass through model.
-    start_time = time.time()
     outputs = model(image_tensor.to(device))
-    end_time = time.time()
     # Get the softmax probabilities.
     probs = F.softmax(outputs, dim=1).data.squeeze()
     # get top probability
@@ -58,6 +57,7 @@ def predict_class(image, confthre=0.0):
     top_prob = probs_sorted[0].float()
     # Get the class indices of top k probabilities.
     class_idx = topk(probs, 1)[1].int()
+    end_time = time.process_time()
     # Get the current fps.
     infer_time = end_time - start_time
     return InferResult(class_idx, top_prob, infer_time, confthre)
