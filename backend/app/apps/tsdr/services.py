@@ -28,7 +28,7 @@ def get_tsd_predictor():
                 '-c resources/gtsdb_best_ckpt.pth '
                 '--device gpu '
                 '--tsize 800 '
-                '--conf 0.3'
+                '--conf 0.5'
     ).build()
     predictor.warmup(2)
     logger.info('Initialization of yoloX pytorch model complete')
@@ -68,21 +68,22 @@ def tsd_file(image_file):
 
 
 def tsr(image):
-    tsr_result = tsr_infer.predict_class(image, confthre=0.9)
+    tsr_result = tsr_infer.predict_class(image, confthre=0.5)
     return tsr_result
 
 
 def tsdr(image):
-    start_time = time.time()
+    start_time = time.process_time()
     tsd_result = tsd(image)
+    boxed_images = tsd_result.get_boxed_images()
     tsr_result_list = TsrResultList()
-    for box in tsd_result.get_boxed_images():
+    for box in boxed_images:
         tsr_result = tsr(box)
         tsr_result_list.append(tsr_result)
     result_image = TsdrResult(tsd_result, tsr_result_list).visual()
-    save_result(result_image)
-    end_time = time.time()
+    #save_result(result_image)
+    end_time = time.process_time()
     tsdr_infer_time = end_time - start_time
     logger.info(f"Identified Classes ({tsr_result_list.infer_sum():.4f}s): {str(tsr_result_list)}")
-    logger.info(f"TSDR (Detection+Recognition) infer time: {tsdr_infer_time:.4f}s")
+    logger.info(f"Overall infer time: {tsdr_infer_time:.4f}s")
     return tsr_result_list.get_class_ids(), result_image
