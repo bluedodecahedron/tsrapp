@@ -6,8 +6,8 @@ import android.util.Log;
 import androidx.camera.core.ExperimentalGetImage;
 import androidx.camera.core.ImageProxy;
 
-import com.example.frontend.service.client.API;
-import com.example.frontend.service.client.RetrofitClient;
+import com.example.frontend.service.HttpClient.API;
+import com.example.frontend.service.HttpClient.RetrofitClient;
 import com.example.frontend.util.ImageConversion;
 import com.example.frontend.util.NetworkMeasures;
 
@@ -26,6 +26,7 @@ public class TsdrService {
     Consumer<Response<ResponseBody>> onTsdrSuccess;
     Consumer<Response<ResponseBody>> onTsdrFailure;
     Consumer<Throwable> onRequestFailure;
+    int id = 0;
 
     public TsdrService(
             Context context,
@@ -49,7 +50,7 @@ public class TsdrService {
 
         // get request call
         API api = RetrofitClient.getInstance(context).getAPI();
-        Call<ResponseBody> call = api.trafficSignDetection(formData);
+        Call<ResponseBody> call = api.trafficSignDetection(id++, formData);
 
         //queue request (is handled asynchronously)
         call.enqueue(new TsdrCallback());

@@ -93,7 +93,7 @@ public class ImageConversion {
     }
 
     private MultipartBody.Part toFormData(File imageFile) {
-        RequestBody reqBody = RequestBody.create(MediaType.parse("multipart/form-file"), imageFile);
+        RequestBody reqBody = RequestBody.create(imageFile, MediaType.parse("multipart/form-file"));
         MultipartBody.Part partImage = MultipartBody.Part.createFormData("image_file", imageFile.getName(), reqBody);
         Log.i(this.getClass().getName(), "Successful form data creation");
         return partImage;

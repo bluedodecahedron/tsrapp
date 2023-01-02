@@ -2,25 +2,18 @@ import logging
 
 from app.apps.tsdr import services
 from ninja import Router
-from django.http import HttpResponse
-from ninja import NinjaAPI, File
+from ninja import File
 from ninja.files import UploadedFile
+from PIL import Image, ImageShow
+from django.http import FileResponse, HttpResponse
 
 requestLogger = logging.getLogger('django.request')
 router = Router()
 
 
-@router.post('/trafficimg')
-def traffic_sign_detection(request, image_file: UploadedFile = File(...)):
-    requestLogger.info('tsdr traffic image: ' + image_file.name + ', bytesize: ' + str(image_file.size), extra={'request': request})
-
-    return services.tsd(image_file)
-
-
-@router.post('/test', auth=None)
-def test(request):
-    requestLogger.info('test', extra={'request': request})
-
-    return 0
-
-
+@router.post('/trafficimg/{id}')
+def traffic_sign_detection(request, id: int, image_file: UploadedFile = File(...)):
+    requestLogger.info('tsdr traffic image: ' + str(id) + ", name: " + image_file.name + ', bytesize: ' + str(image_file.size), extra={'request': request})
+    result_image = services.tsd_file(image_file)
+    response = FileResponse(result_image, content_type="image/jpeg")
+    return response

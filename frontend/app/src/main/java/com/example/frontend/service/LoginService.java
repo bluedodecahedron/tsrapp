@@ -5,9 +5,9 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import com.example.frontend.schema.UserSchema;
-import com.example.frontend.service.client.API;
-import com.example.frontend.service.client.RetrofitClient;
+import com.example.frontend.schema.User;
+import com.example.frontend.service.HttpClient.API;
+import com.example.frontend.service.HttpClient.RetrofitClient;
 import com.example.frontend.util.NetworkMeasures;
 
 import java.util.HashSet;
@@ -36,7 +36,7 @@ public class LoginService {
         this.onRequestFailure = onRequestFailure;
     }
 
-    public void login(UserSchema user) {
+    public void login(User user) {
         cleanCookies();
 
         //get request call
@@ -55,9 +55,9 @@ public class LoginService {
     }
 
     class LoginCallback implements Callback<ResponseBody> {
-        UserSchema user;
+        User user;
 
-        public LoginCallback(UserSchema user) {
+        public LoginCallback(User user) {
             super();
             this.user = user;
         }
@@ -80,12 +80,12 @@ public class LoginService {
         }
     }
 
-    private void handleLoginSuccess(UserSchema user, Response<ResponseBody> response) {
+    private void handleLoginSuccess(User user, Response<ResponseBody> response) {
         Log.i(this.getClass().getName(), "Login successful, response time: " + NetworkMeasures.getResponseTime(response) + "ms");
         rememberUser(user.getUsername(), user.getPassword());
     }
 
-    private void handleLoginFailure(UserSchema user, Response<ResponseBody> response) {
+    private void handleLoginFailure(User user, Response<ResponseBody> response) {
         Log.e(this.getClass().getName(), "Login request for " + user.getUsername() + " failed with status code " + response.code() + ": " + response.message());
     }
 
@@ -102,7 +102,7 @@ public class LoginService {
         Ed.commit();
     }
 
-    public UserSchema getRememberedUser() {
+    public User getRememberedUser() {
         SharedPreferences sp1=context.getSharedPreferences("Login", Context.MODE_PRIVATE);
 
         if (sp1.contains("username") && sp1.contains("password")) {
@@ -110,7 +110,7 @@ public class LoginService {
             String password = sp1.getString("password", null);
 
             Log.i(this.getClass().getName(), "Retrieved remembered user: "  + username );
-            return new UserSchema(username, password);
+            return new User(username, password);
         } else {
             Log.i(this.getClass().getName(), "No remembered user");
             return null;

@@ -1,0 +1,4 @@
+# Training
+train.py --pretrained --fine-tune --epochs 75 --learning-rate 0.0001
+# Testing
+cam.py

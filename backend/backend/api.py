@@ -1,7 +1,12 @@
 from ninja import NinjaAPI
 from app.apps.authentication.api import router as authentication_router
 from app.apps.tsdr.api import router as tsdr_router
-from django.http import HttpResponse
+from app.apps.webrtc.client.api import router as webrtc_client_router
+from app.apps.webrtc.server.api import router as webrtc_server_router
+
+import logging
+
+requestLogger = logging.getLogger('django.request')
 
 
 def authenticate(request):
@@ -12,10 +17,7 @@ def authenticate(request):
 
 
 api = NinjaAPI(auth=authenticate)
-api.add_router('/authentication/', authentication_router)
-api.add_router('/tsdr/', tsdr_router)
-
-
-@api.get('/index', auth=None)
-def index(request):
-    return HttpResponse('This service provides an API for detecting and recognizing traffic signs in road images')
+api.add_router('/api/authentication/', authentication_router)
+api.add_router('/api/tsdr/', tsdr_router)
+api.add_router('/api/webrtc/client/', webrtc_client_router)
+api.add_router('/api/webrtc/server/', webrtc_server_router)
