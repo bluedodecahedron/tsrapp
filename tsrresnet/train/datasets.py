@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 import glob as glob
 import random
+import PIL
 
 from torchvision import datasets
 from torch.utils.data import DataLoader, Subset
@@ -14,23 +15,48 @@ ROOT_DIR = '../input/GTSRB_Final_Training_Images/GTSRB/Final_Training/Images'
 VALID_SPLIT = 0.1
 RESIZE_TO = 224 # Image size of resize when applying transforms.
 BATCH_SIZE = 64
-NUM_WORKERS = 4 # Number of parallel processes for data preparation.
+NUM_WORKERS = 12 # Number of parallel processes for data preparation.
 
 
 # Training transforms.
 class TrainTransforms:
+    augments = [
+        # Convert to grayscale, then invert bright/dark
+        A.Compose([
+            A.ToGray(p=1.0),
+            A.InvertImg(p=1.0)
+        ], p=0.1),
+        A.RandomShadow(shadow_roi=(0, 0, 1, 0.75), num_shadows_lower=1, num_shadows_upper=1, shadow_dimension=3, p=1.0),
+        # Adjust brightness, contrast, hue, saturation
+        A.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2, p=1.0),
+        # Adjust Gamma
+        A.RandomGamma(gamma_limit=(80, 120), p=0.33),
+        # Histogram Equalization
+        A.CLAHE(clip_limit=4.0, tile_grid_size=(8, 8), p=1),
+        # Simulates fog
+        A.RandomFog(p=0.33),
+        # Simulates rain
+        A.RandomRain(p=0.25),
+        # Shift(translate) Image, Scale Image, Rotate Image
+        A.ShiftScaleRotate(shift_limit=0.1, scale_limit=(-0.1, 0.6), rotate_limit=15, p=1.0),
+        # Distort Image by a grid
+        A.GridDistortion(distort_limit=0.2, p=1.0),
+        # Distort Image Elastically
+        A.ElasticTransform(alpha_affine=0.2, p=1.0),
+        A.OneOf([
+            # Add a yellow sun flare
+            A.RandomSunFlare(flare_roi=(0.2, 0.2, 1, 0.5), angle_lower=0.5, num_flare_circles_lower=4, src_radius=100,
+                             src_color=(204, 255, 255), p=0.15),
+            # Add a red sun flare
+            A.RandomSunFlare(flare_roi=(0.2, 0.2, 1, 0.5), angle_lower=0.5, num_flare_circles_lower=4, src_radius=100,
+                             src_color=(204, 204, 255), p=0.15),
+        ]),
+    ]
+
     def __init__(self, resize_to):
         self.transforms = A.Compose([
-            A.Resize(224, 224),
-            A.RandomBrightnessContrast(p=1),
-            A.RandomGamma(p=1),
-            A.CLAHE(p=1),
-            A.RandomFog(),
-            A.RandomRain(),
-            A.ShiftScaleRotate(shift_limit=0.1, scale_limit=(-0.1, 0.6), rotate_limit=20, p=1.0),
-            A.OpticalDistortion(),
-            A.GridDistortion(),
-            A.RandomSunFlare(flare_roi=(0, 0, 1, 0.5), angle_lower=0.5, src_radius=100, p=0.3),
+            A.Resize(resize_to, resize_to),
+            *TrainTransforms.augments,
             A.Normalize(
                 mean=[0.485, 0.456, 0.406],
                 std=[0.229, 0.224, 0.225]
@@ -39,7 +65,8 @@ class TrainTransforms:
         ])
     
     def __call__(self, img):
-        return self.transforms(image=np.array(img))['image']
+        bla = self.transforms(image=np.array(img))['image']
+        return bla
 
 
 # Validation transforms.
@@ -108,19 +135,11 @@ def get_data_loaders(dataset_train, dataset_valid):
 
 def visualize_transform():
     # Run for all the test images.
-    all_images = glob.glob(f'{ROOT_DIR}/*/*.ppm')
+    all_images = glob.glob(f'{ROOT_DIR}/00005/*.ppm')
 
     transform = A.Compose([
-        A.Resize(224, 224),
-        A.RandomBrightnessContrast(p=1),
-        A.RandomGamma(p=1),
-        A.CLAHE(p=1),
-        A.RandomFog(),
-        A.RandomRain(),
-        A.ShiftScaleRotate(shift_limit=0.1, scale_limit=(-0.1, 0.6), rotate_limit=20, p=1.0),
-        A.OpticalDistortion(),
-        A.GridDistortion(),
-        A.RandomSunFlare(flare_roi=(0, 0, 1, 0.5), angle_lower=0.5, src_radius=100, p=0.3)
+        A.Resize(RESIZE_TO, RESIZE_TO),
+        *TrainTransforms.augments
     ])
 
     random.seed(42)
@@ -132,7 +151,7 @@ def visualize_transform():
         # Apply the image transforms.
         image_tensor = transform(image=image)['image']
 
-        orig_image = cv2.resize(orig_image, (224, 224))
+        orig_image = cv2.resize(orig_image, (RESIZE_TO, RESIZE_TO))
         img_concat = cv2.hconcat([
             np.array(orig_image, dtype=np.uint8),
             np.array(image_tensor, dtype=np.uint8)

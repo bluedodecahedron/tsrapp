@@ -21,7 +21,7 @@ class_names = sign_names_df.SignName.tolist()
 
 # DataFrame for ground truth.
 gt_df = pd.read_csv(
-    '../input/GTSRB_Final_Test_GT/GT-final_test.csv', 
+    '../input/GTSRB_Final_Test_GT/GT-final_test.csv',
     delimiter=';'
 )
 gt_df = gt_df.set_index('Filename', drop=True)
@@ -29,8 +29,8 @@ gt_df = gt_df.set_index('Filename', drop=True)
 # Initialize model, switch to eval model, load trained weights.
 model = build_model(
     pretrained=False,
-    fine_tune=False, 
-    num_classes=43
+    fine_tune=False,
+    num_classes=46
 ).to(device)
 model = model.eval()
 model.load_state_dict(
@@ -70,7 +70,7 @@ def visualize_and_save_map(
     # Put class label text on the result.
     if class_idx is not None:
         cv2.putText(
-            result, 
+            result,
             f"Pred: {str(class_names[int(class_idx)])}", (5, 20),
             cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 0), 2,
             cv2.LINE_AA
@@ -83,14 +83,14 @@ def visualize_and_save_map(
         )
     if gt_idx is not None:
         cv2.putText(
-            result, 
+            result,
             f"GT: {str(class_names[int(gt_idx)])}", (5, 60),
             cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 0), 2,
             cv2.LINE_AA
         )
     orig_image = cv2.resize(orig_image, (224, 224))
     img_concat = cv2.hconcat([
-        np.array(result, dtype=np.uint8), 
+        np.array(result, dtype=np.uint8),
         np.array(orig_image, dtype=np.uint8)
     ])
     cv2.imshow('Result', img_concat)
@@ -104,8 +104,10 @@ def visualize_and_save_map(
 features_blobs = []
 def hook_feature(module, input, output):
     features_blobs.append(output.data.cpu().numpy())
-bla = model._modules
+# debug variable below to check module names
+# modules = model._modules
 model._modules.get('layer4').register_forward_hook(hook_feature)
+# model._modules.get('features').register_forward_hook(hook_feature)
 # Get the softmax weight.
 params = list(model.parameters())
 weight_softmax = np.squeeze(params[-2].data.cpu().numpy())
@@ -123,16 +125,25 @@ transform = A.Compose([
 counter = 0
 # Run for all the test images.
 all_images = glob.glob('../input/GTSRB_Final_Test_Images/GTSRB/Final_Test/Images/*.ppm')
-# all_images = glob.glob('../input/assets/*.jpg')
+sub_images = glob.glob('../input/GTSRB_Final_Training_Images/GTSRB/Final_Training/Images/00000/*.ppm')
+asset_images = glob.glob('../assets/*.jpg')
+images = all_images
 is_ground_truth = True
 correct_count = 0
 frame_count = 0 # To count total frames.
-total_fps = 0 # To get the final frames per second. 
-for i, image_path in enumerate(all_images):
+total_fps = 0 # To get the final frames per second.
+
+# We need two lists to keep track of class-wise accuracy.
+class_correct = list(0. for i in range(len(class_names)))
+class_total = list(0. for i in range(len(class_names)))
+
+for i, image_path in enumerate(images):
+    if i > 100000:
+        break
     # Read the image.
     image = cv2.imread(image_path)
     orig_image = image.copy()
-    #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     height, width, _ = orig_image.shape
     # Apply the image transforms.
     image_tensor = transform(image=image)['image']
@@ -156,13 +167,15 @@ for i, image_path in enumerate(all_images):
         # Check whether correct prediction or not.
         if gt_idx == class_idx:
             correct_count += 1
+            class_correct[gt_idx] += 1
+        class_total[gt_idx] += 1
     # Generate class activation mapping for the top1 prediction.
     CAMs = returnCAM(features_blobs[0], weight_softmax, class_idx)
     # File name to save the resulting CAM image with.
     save_name = f"{image_path.split('/')[-1].split('.')[0]}"
     # Show and save the results.
     result = apply_color_map(CAMs, width, height, orig_image)
-    visualize_and_save_map(result, orig_image, gt_idx, class_idx, top_prob, save_name)
+    # visualize_and_save_map(result, orig_image, gt_idx, class_idx, top_prob, save_name)
     counter += 1
     print(f"Image: {counter}")
     # Get the current fps.
@@ -179,6 +192,14 @@ print(f"Accuracy: {correct_count/len(all_images)*100:.3f}")
 # calculate and print the average FPS
 avg_fps = total_fps / frame_count
 print(f"Average FPS: {avg_fps:.3f}")
+
+# Print the accuracy for each class.
+print('\n')
+for i in range(len(class_names)):
+    if class_total[i] == 0:
+        class_total[i] = 1
+    print(f"Accuracy of class {class_names[i]}: {100 * class_correct[i] / class_total[i]}")
+print('\n')
 
 # Close all frames and video windows.
 cv2.destroyAllWindows()

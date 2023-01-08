@@ -12,12 +12,13 @@ from tsrresnet.tools.infer_result import InferResult
 
 # Define computation device.
 device = 'cuda'
+NUM_CLASSES = 46
 
 # Initialize model, switch to eval model, load trained weights.
 model = build_model(
     pretrained=False,
     fine_tune=False, 
-    num_classes=43
+    num_classes=NUM_CLASSES
 ).to(device)
 model = model.eval()
 model.load_state_dict(
@@ -57,7 +58,11 @@ def predict_class(image, confthre=0.0):
     top_prob = probs_sorted[0].float()
     # Get the class indices of top k probabilities.
     class_idx = topk(probs, 1)[1].int()
+    # Set Unknown if prob below threshold
+    if top_prob < confthre:
+        # set to number of classes (=next index)
+        class_idx = model.fc.out_features
     end_time = time.process_time()
     # Get the current fps.
     infer_time = end_time - start_time
-    return InferResult(class_idx, top_prob, infer_time, confthre)
+    return InferResult(int(class_idx), top_prob, infer_time, confthre)

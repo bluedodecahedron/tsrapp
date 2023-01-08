@@ -3,6 +3,7 @@ import pandas as pd
 # Class names.
 sign_names_df = pd.read_csv('resources/signnames.csv')
 class_names = sign_names_df.SignName.tolist()
+class_names.append('Unknown')
 
 
 class InferResultList:
@@ -41,9 +42,11 @@ class InferResultList:
 
 
 class InferResult:
+    CLASS_NAMES = class_names
+
     def __init__(self, class_idx, top_prob, infer_time, confthre):
         self.class_idx = class_idx
-        self.class_str = str(class_names[int(class_idx)])
+        self.class_str = str(class_names[class_idx])
         self.top_prob = top_prob
         self.infer_time = infer_time
         self.cls_names = class_names
