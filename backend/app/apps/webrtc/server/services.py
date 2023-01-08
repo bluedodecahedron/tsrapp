@@ -10,7 +10,6 @@ import traceback
 import aiortc.codecs.vpx
 import cv2
 import app.apps.tsdr.services as services
-
 from av import VideoFrame
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaRecorder, MediaRelay
@@ -55,11 +54,12 @@ class VideoTransformTrack(MediaStreamTrack):
 
     kind = "video"
 
-    def __init__(self, track, transform, pc):
+    def __init__(self, track, transform, pc, active_traffic_signs):
         super().__init__()  # don't forget this!
         self.track = track
         self.transform = transform
         self.pc = pc
+        self.active_traffic_signs = active_traffic_signs
 
     async def recv(self):
         start_time = time.perf_counter()
@@ -70,7 +70,8 @@ class VideoTransformTrack(MediaStreamTrack):
         if self.transform == "tsdr":
             # perform traffic sign detection
             try:
-                class_ids, img = services.tsdr(img)
+                # class_ids, img = services.tsdr(img)
+                img = self.active_traffic_signs.update(img)
             except:
                 traceback.print_exc()
 
@@ -148,9 +149,13 @@ async def offer(offer_schema):
         log_info("Track %s received", track.kind)
 
         if track.kind == "video":
+            active_traffic_signs = services.ActiveTrafficSigns()
             pc.addTrack(
                 VideoTransformTrack(
-                    relay.subscribe(track), transform=offer_schema.video_transform, pc=pc
+                    relay.subscribe(track),
+                    transform=offer_schema.video_transform,
+                    pc=pc,
+                    active_traffic_signs=active_traffic_signs
                 )
             )
             if record_to:

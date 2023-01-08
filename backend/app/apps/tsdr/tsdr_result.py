@@ -29,7 +29,7 @@ class TsdrResult:
             box = tsd_box_borders[i]
             tsd_prob = tsd_probs[i]
             tsd_id = int(tsd_ids[i])
-            tsr_id = int(tsr_ids[i])
+            tsr_id = tsr_ids[i]
             tsr_prob = tsr_probs[i]
             if tsd_prob < tsd_conf:
                 continue
@@ -42,7 +42,7 @@ class TsdrResult:
             alt_rec_color =  (_COLORS[79] * 255).astype(np.uint8).tolist()
             tsd_text = '{}: {:.1f}%'.format(tsd_names[tsd_id], tsd_prob * 100)
             tsr_text = '{}: {:.1f}%'.format(tsr_names[tsr_id], tsr_prob * 100)
-            alt_text = 'unknown sign'
+            alt_text = 'Unknown'
             txt_color = (0, 0, 0) if np.mean(_COLORS[tsr_id]) > 0.5 else (255, 255, 255)
             alt_color = (0, 0, 0) if np.mean(_COLORS[79]) > 0.5 else (255, 255, 255)
             font = cv2.FONT_HERSHEY_SIMPLEX
