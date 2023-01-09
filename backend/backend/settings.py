@@ -15,6 +15,9 @@ import logging
 import configparser
 from pathlib import Path
 from django.core.management.utils import get_random_secret_key
+import signal
+import app.apps.tsdr.services
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent

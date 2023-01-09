@@ -4,6 +4,7 @@ import numpy as np
 import logging
 import os
 import time
+import signal
 from datetime import datetime
 
 from app.apps.tsdr.tsdr_result import TsdrResult
@@ -89,10 +90,68 @@ def tsdr(image):
     return tsr_result_list.get_class_ids(), result_image
 
 
+class TsdrState:
+    def __init__(self):
+        self.active_traffic_signs = ActiveTrafficSigns()
+        self.video_builder = VideoBuilder()
+
+    def update(self, image):
+        self.video_builder.update(image)
+        return self.active_traffic_signs.update(image)
+
+    def release(self, *args):
+        self.video_builder.release()
+
+
+class VideoBuilder:
+    VIDEO_OUTPUT_ROOT = 'storage/videos'
+    FPS = 10.0
+    MAX_SECONDS = 2*60*60  # 2 hours in seconds
+    MAX_FRAMES = MAX_SECONDS * FPS
+
+    def __init__(self):
+        time_now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")[:-3]
+        self.videoOutput = VideoBuilder.VIDEO_OUTPUT_ROOT + f'/{time_now}.mp4'
+        self.frameSize = None
+        self.videoWriter = None
+        self.frameCounter = 0
+
+    def update(self, image):
+        self.add_frame(image.copy())
+
+    def add_frame(self, frame):
+        if self.frameCounter == VideoBuilder.MAX_FRAMES:
+            self.release()
+
+        if self.videoWriter is None:
+            self.create_writer(frame)
+
+        frame = cv2.resize(frame, self.frameSize)
+        self.videoWriter.write(frame)
+        self.frameCounter += 1
+
+    def create_writer(self, frame):
+        self.create_root()
+        height, width, _ = frame.shape
+        self.frameSize = (width, height)
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Be sure to use lower case
+        self.videoWriter = cv2.VideoWriter(self.videoOutput, fourcc, VideoBuilder.FPS, self.frameSize)
+
+    def create_root(self):
+        if not os.path.exists(VideoBuilder.VIDEO_OUTPUT_ROOT):
+            os.makedirs(VideoBuilder.VIDEO_OUTPUT_ROOT)
+
+    def release(self):
+        if self.videoWriter is not None:
+            logger.info(f"Releasing video file {self.videoOutput}")
+            self.videoWriter.release()
+            self.videoWriter = None
+
+
 class ActiveTrafficSigns:
     MIN_COUNT_NEEDED = 3
     ICONS_FOLDER = "resources/images/classes"
-    ICON_SIZE_PRCT = 0.05
+    ICON_SIZE_PRCT = 0.1  # Icon width in percent of input image
 
     def __init__(self):
         self.count_dic = {}
@@ -167,7 +226,7 @@ class ActiveTrafficSigns:
         x_offset = x_offset_BASE + (prct+dist_between_icons) * icon_index
         x_offset = int(image.shape[1] * x_offset)
 
-        y_offset = int(image.shape[0] * (1.0 - 2*prct))
+        y_offset = int(image.shape[0] * (0.7 - 0.5*prct))
 
         return x_offset, y_offset
 

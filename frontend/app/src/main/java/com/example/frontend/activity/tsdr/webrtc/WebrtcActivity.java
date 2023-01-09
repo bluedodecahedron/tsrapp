@@ -51,7 +51,7 @@ public class WebrtcActivity extends AppCompatActivity {
     public static final String VIDEO_TRACK_ID = "ARDAMSv0";
     public static final int VIDEO_RESOLUTION_WIDTH = 800; // Video capturer chooses the next closest supported resolution for the device
     public static final int VIDEO_RESOLUTION_HEIGHT = 500;
-    public static final int FPS = 15; // Video capturer chooses the next closest supported fps value for the device
+    public static final int FPS = 60; // Video capturer chooses the next closest supported fps value for the device
 
     private ActivityWebrtcBinding binding;
     private PeerConnection localPeerConnection;
@@ -152,7 +152,7 @@ public class WebrtcActivity extends AppCompatActivity {
 
     private void initializePeerConnection() {
         localPeerConnection = createPeerConnection(factory);
-        localPeerConnection.setBitrate(500000,2000000,4000000);
+        localPeerConnection.setBitrate(100000,1000000,1500000);
         statsRenderer = new StatisticsRenderer(this, binding, localPeerConnection, TAG);
         binding.surfaceRenderer.setStatsRenderer(statsRenderer);
     }

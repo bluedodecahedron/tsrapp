@@ -1,6 +1,7 @@
 storage/backend.log
 storage/db.sqlite3
 storage/tsd
+storage/videos
 
 .idea/
 admindata

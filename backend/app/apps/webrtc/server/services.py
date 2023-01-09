@@ -6,6 +6,7 @@ import logging
 import time
 import uuid
 import traceback
+import signal
 
 import aiortc.codecs.vpx
 import cv2
@@ -17,9 +18,9 @@ from aiortc.contrib.media import MediaBlackhole, MediaRecorder, MediaRelay
 
 logger = logging.getLogger('backend')
 
-aiortc.codecs.vpx.MIN_BITRATE = 500000
-aiortc.codecs.vpx.DEFAULT_BITRATE = 2000000
-aiortc.codecs.vpx.MAX_BITRATE = 4000000
+aiortc.codecs.vpx.MIN_BITRATE = 100000
+aiortc.codecs.vpx.DEFAULT_BITRATE = 1000000
+aiortc.codecs.vpx.MAX_BITRATE = 1500000
 aiortc.codecs.vpx.MAX_FRAME_RATE = 15
 pcs = set()
 relay = MediaRelay()
@@ -54,12 +55,12 @@ class VideoTransformTrack(MediaStreamTrack):
 
     kind = "video"
 
-    def __init__(self, track, transform, pc, active_traffic_signs):
+    def __init__(self, track, transform, pc, tsdr_state):
         super().__init__()  # don't forget this!
         self.track = track
         self.transform = transform
         self.pc = pc
-        self.active_traffic_signs = active_traffic_signs
+        self.tsdr_state = tsdr_state
 
     async def recv(self):
         start_time = time.perf_counter()
@@ -71,7 +72,7 @@ class VideoTransformTrack(MediaStreamTrack):
             # perform traffic sign detection
             try:
                 # class_ids, img = services.tsdr(img)
-                img = self.active_traffic_signs.update(img)
+                img = self.tsdr_state.update(img)
             except:
                 traceback.print_exc()
 
@@ -110,6 +111,9 @@ class VideoTransformTrack(MediaStreamTrack):
 
 
 async def offer(offer_schema):
+    signal.signal(signal.SIGINT, on_shutdown)
+    signal.signal(signal.SIGTERM, on_shutdown)
+
     offer = RTCSessionDescription(sdp=offer_schema.sdp, type=offer_schema.type)
     record_to = None
 
@@ -147,15 +151,15 @@ async def offer(offer_schema):
     @pc.on("track")
     def on_track(track):
         log_info("Track %s received", track.kind)
+        tsdr_state = services.TsdrState()
 
         if track.kind == "video":
-            active_traffic_signs = services.ActiveTrafficSigns()
             pc.addTrack(
                 VideoTransformTrack(
                     relay.subscribe(track),
                     transform=offer_schema.video_transform,
                     pc=pc,
-                    active_traffic_signs=active_traffic_signs
+                    tsdr_state=tsdr_state
                 )
             )
             if record_to:
@@ -165,6 +169,9 @@ async def offer(offer_schema):
         async def on_ended():
             log_info("Track %s ended", track.kind)
             await recorder.stop()
+            await pc.close()
+            tsdr_state.release()
+
 
     # handle offer
     await pc.setRemoteDescription(offer)
@@ -180,8 +187,8 @@ async def offer(offer_schema):
     return sdp
 
 
-async def on_shutdown(app):
+def on_shutdown(*args):
     # close peer connections
+    logger.info("Closing any remaining peer connections")
     coros = [pc.close() for pc in pcs]
-    await asyncio.gather(*coros)
-    pcs.clear()
+    asyncio.gather(*coros)

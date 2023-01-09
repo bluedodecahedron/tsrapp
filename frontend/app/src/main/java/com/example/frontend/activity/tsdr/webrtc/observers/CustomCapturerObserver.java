@@ -9,7 +9,7 @@ import java.time.temporal.ChronoUnit;
 public class CustomCapturerObserver implements CapturerObserver {
     private final CapturerObserver capturerObserver;
     private LocalDateTime lastFrameTime;
-    private static final int MAX_FPS = 60; //Limits FPS to some custom value since device video capturer is usually restricted to fixed values (often 15, 30, 45, 60)
+    private static final int MAX_FPS = 10; //Limits FPS to some custom value since device video capturer is usually restricted to fixed values (often 15, 30, 45, 60)
 
     public CustomCapturerObserver(CapturerObserver capturerObserver) {
         this.capturerObserver = capturerObserver;
