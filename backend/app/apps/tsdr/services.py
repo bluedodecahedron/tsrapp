@@ -13,6 +13,7 @@ import yolox.tools.demo as tsd_demo
 from yolox.tools.infer_result import InferResult as TsdResult
 import yolox.exp.example.custom.yolox_s_gtsdb as gtsdb
 import tsrresnet.tools.inference as tsr_infer
+from tsrresnet.tools.model import NUM_CLASSES
 from tsrresnet.tools.infer_result import InferResult as TsrResult
 from tsrresnet.tools.infer_result import InferResultList as TsrResultList
 
@@ -183,7 +184,7 @@ class ActiveTrafficSigns:
         active_classes = []
         for class_id in self.count_dic:
             if self.count_dic[class_id] >= ActiveTrafficSigns.MIN_COUNT_NEEDED:
-                if class_id == tsr_infer.NUM_CLASSES or class_id == tsr_infer.NUM_CLASSES-1:
+                if class_id == NUM_CLASSES or class_id == NUM_CLASSES-1:
                     pass
                 else:
                     active_classes.append(class_id)

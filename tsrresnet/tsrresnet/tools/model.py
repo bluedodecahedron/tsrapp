@@ -1,15 +1,21 @@
 import torchvision.models as models
 import torch.nn as nn
 
+NUM_CLASSES = 44
 
-def build_model(pretrained=True, fine_tune=False, num_classes=10):
+
+def build_model(model='resnet18', pretrained=True, fine_tune=False, num_classes=NUM_CLASSES):
     if pretrained:
         print('[INFO]: Loading pre-trained weights')
     else:
         print('[INFO]: Not loading pre-trained weights')
-    # model = models.mobilenet_v3_large(weights=models.MobileNet_V3_Large_Weights.DEFAULT)
-    model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
-    # model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
+
+    if model == 'resnet18':
+        model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+    elif model == 'resnet50':
+        model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
+    elif model == 'mobilenet':
+        model = models.mobilenet_v3_large(weights=models.MobileNet_V3_Large_Weights.DEFAULT)
 
     if fine_tune:
         print('[INFO]: Fine-tuning all layers...')

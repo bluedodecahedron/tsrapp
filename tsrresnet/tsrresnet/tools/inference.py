@@ -12,13 +12,11 @@ from tsrresnet.tools.infer_result import InferResult
 
 # Define computation device.
 device = 'cuda'
-NUM_CLASSES = 46
 
 # Initialize model, switch to eval model, load trained weights.
 model = build_model(
     pretrained=False,
-    fine_tune=False, 
-    num_classes=NUM_CLASSES
+    fine_tune=False,
 ).to(device)
 model = model.eval()
 model.load_state_dict(

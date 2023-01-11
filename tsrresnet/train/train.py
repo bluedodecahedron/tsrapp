@@ -63,7 +63,7 @@ def train(
             train_running_loss += loss.item()
             # Calculate the accuracy.
             _, preds = torch.max(outputs.data, 1)
-            train_running_correct += (preds == labels).sum().item()
+            # train_running_correct += (preds == labels).sum().item()
             # Backpropagation.
             loss.backward()
             # Update the weights.
@@ -145,8 +145,7 @@ if __name__ == '__main__':
     # Load the model.
     model = build_model(
         pretrained=args['pretrained'],
-        fine_tune=args['fine_tune'], 
-        num_classes=len(dataset_classes)
+        fine_tune=args['fine_tune']
     ).to(device)
     
     # Total parameters and trainable parameters.

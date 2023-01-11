@@ -29,8 +29,7 @@ gt_df = gt_df.set_index('Filename', drop=True)
 # Initialize model, switch to eval model, load trained weights.
 model = build_model(
     pretrained=False,
-    fine_tune=False,
-    num_classes=46
+    fine_tune=False
 ).to(device)
 model = model.eval()
 model.load_state_dict(
