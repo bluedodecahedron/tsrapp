@@ -197,6 +197,7 @@ public class StatisticsRenderer extends TimerTask {
             latencyEstimate += roundTripTime; //account for round trip time
             latencyEstimate += 20; //account for encoding and decoding time on client and server
             latencyEstimate += 150; //account for download and upload time
+            latencyEstimate += 35; //account for frame processing and object detection on server
         }
 
         updateUi(downloadRate, uploadRate, outboundFrameWidth, outboundFrameHeight, inboundFrameWidth, inboundFrameHeight, outboundFramesPerSecond, inboundFramesPerSecond, outboundQualityLimitationReason, latencyEstimate);
