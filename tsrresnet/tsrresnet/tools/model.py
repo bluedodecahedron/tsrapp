@@ -4,7 +4,7 @@ import torch.nn as nn
 NUM_CLASSES = 44
 
 
-def build_model(model='resnet18', pretrained=True, fine_tune=False, num_classes=NUM_CLASSES):
+def build_model(model='resnet50', pretrained=True, fine_tune=False, num_classes=NUM_CLASSES):
     if pretrained:
         print('[INFO]: Loading pre-trained weights')
     else:

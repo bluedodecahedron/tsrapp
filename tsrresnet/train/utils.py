@@ -15,7 +15,7 @@ def save_model(epochs, model, optimizer, criterion):
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': criterion,
-                }, f"../outputs/models/model.pth")
+                }, f"../outputs/model.pth")
 
 
 def save_plots(train_acc, valid_acc, train_loss, valid_loss):

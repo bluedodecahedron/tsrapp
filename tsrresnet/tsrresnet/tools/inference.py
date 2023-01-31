@@ -39,7 +39,7 @@ transform = A.Compose([
 def predict_class(image, confthre=0.0):
     # Read the image.
     # image = cv2.imread(image_path)
-    start_time = time.process_time()
+    start_time = time.perf_counter()
     orig_image = image.copy()
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     height, width, _ = orig_image.shape
@@ -60,7 +60,7 @@ def predict_class(image, confthre=0.0):
     if top_prob < confthre:
         # set to number of classes (=next index)
         class_idx = model.fc.out_features
-    end_time = time.process_time()
+    end_time = time.perf_counter()
     # Get the current fps.
     infer_time = end_time - start_time
     return InferResult(int(class_idx), top_prob, infer_time, confthre)
