@@ -72,6 +72,7 @@ function negotiate() {
         var codec;
 
         codec = document.getElementById('video-codec').value;
+        console.log('CODEC:', codec)
         if (codec !== 'default') {
             offer.sdp = sdpFilterCodec('video', codec, offer.sdp);
         }

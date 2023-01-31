@@ -8,20 +8,24 @@ import uuid
 import traceback
 import signal
 
-import aiortc.codecs.vpx
+import aiortc.codecs.h264
 import cv2
 import app.apps.tsdr.services as services
 from av import VideoFrame
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaRecorder, MediaRelay
+from aiortc.rtcrtpsender import RTCRtpSender
 
 
 logger = logging.getLogger('backend')
-
-aiortc.codecs.vpx.MIN_BITRATE = 100000
-aiortc.codecs.vpx.DEFAULT_BITRATE = 1000000
-aiortc.codecs.vpx.MAX_BITRATE = 1500000
-aiortc.codecs.vpx.MAX_FRAME_RATE = 15
+aiortc.codecs.vpx.MIN_BITRATE = 1000000
+aiortc.codecs.vpx.DEFAULT_BITRATE = 1500000
+aiortc.codecs.vpx.MAX_BITRATE = 2000000
+aiortc.codecs.vpx.MAX_FRAME_RATE = 60
+aiortc.codecs.h264.MIN_BITRATE = 1000000
+aiortc.codecs.h264.DEFAULT_BITRATE = 2000000
+aiortc.codecs.h264.MAX_BITRATE = 10000000
+aiortc.codecs.h264.MAX_FRAME_RATE = 60
 pcs = set()
 relay = MediaRelay()
 
@@ -63,9 +67,9 @@ class VideoTransformTrack(MediaStreamTrack):
         self.tsdr_state = tsdr_state
 
     async def recv(self):
-        start_time = time.perf_counter()
         frame = await self.track.recv()
-        img = frame.to_ndarray(format="bgr24")
+        start_time = time.perf_counter()
+        img = frame.to_ndarray(format="bgr24").copy()
 
         # perform some sort of image processing
         if self.transform == "tsdr":
@@ -95,11 +99,13 @@ class VideoTransformTrack(MediaStreamTrack):
         fpsTimer.add_frame()
         # print some stats every second
         if fpsTimer.get_time_difference() > 1.0:
+            transceivers = self.pc.getTransceivers()
+            senders = self.pc.getSenders()
             # print fps
             logger.info("FPS: " + str(fpsTimer.get_fps()))
             fpsTimer.reset()
             # save frame
-            services.save_result(img)
+            # services.save_result(img)
             # print frame processing time
             logger.info("Frame processing took: {:.4f}s".format(time.perf_counter() - start_time))
             # print pc stats
@@ -108,6 +114,14 @@ class VideoTransformTrack(MediaStreamTrack):
             logger.info("Sender stats: \n" + str(stats))
 
         return new_frame
+
+
+def force_codec(pc, sender, forced_codec):
+    kind = forced_codec.split("/")[0]
+    codecs = RTCRtpSender.getCapabilities(kind).codecs
+    transceiver = next(t for t in pc.getTransceivers() if t.sender == sender)
+    pref = [codec for codec in codecs if codec.mimeType == forced_codec]
+    transceiver.setCodecPreferences(pref)
 
 
 async def offer(offer_schema):
@@ -154,7 +168,7 @@ async def offer(offer_schema):
         tsdr_state = services.TsdrState()
 
         if track.kind == "video":
-            pc.addTrack(
+            video_sender = pc.addTrack(
                 VideoTransformTrack(
                     relay.subscribe(track),
                     transform=offer_schema.video_transform,
@@ -162,6 +176,7 @@ async def offer(offer_schema):
                     tsdr_state=tsdr_state
                 )
             )
+            # force_codec(pc, video_sender, 'video/H264')
             if record_to:
                 recorder.addTrack(relay.subscribe(track))
 

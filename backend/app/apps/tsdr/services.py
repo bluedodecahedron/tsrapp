@@ -75,7 +75,7 @@ def tsr(image):
 
 
 def tsdr(image):
-    start_time = time.process_time()
+    start_time = time.perf_counter()
     tsd_result = tsd(image)
     boxed_images = tsd_result.get_boxed_images()
     tsr_result_list = TsrResultList()
@@ -84,7 +84,7 @@ def tsdr(image):
         tsr_result_list.append(tsr_result)
     result_image = TsdrResult(tsd_result, tsr_result_list).visual()
     #save_result(result_image)
-    end_time = time.process_time()
+    end_time = time.perf_counter()
     tsdr_infer_time = end_time - start_time
     logger.info(f"Identified Classes ({tsr_result_list.infer_sum():.4f}s): {str(tsr_result_list)}")
     logger.info(f"Overall infer time: {tsdr_infer_time:.4f}s")
@@ -97,8 +97,10 @@ class TsdrState:
         self.video_builder = VideoBuilder()
 
     def update(self, image):
-        self.video_builder.update(image)
-        return self.active_traffic_signs.update(image)
+        result_image = self.active_traffic_signs.update(image)
+        self.video_builder.update(result_image)
+        return result_image
+
 
     def release(self, *args):
         self.video_builder.release()
