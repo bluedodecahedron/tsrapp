@@ -33,20 +33,20 @@ relay = MediaRelay()
 class FPSTimer:
     def __init__(self):
         self.frame_counter = 0
-        self.start_time = time.perf_counter()
+        self.start_time = time.time()
 
     def add_frame(self):
         self.frame_counter = self.frame_counter + 1
 
     def get_time_difference(self):
-        return time.perf_counter() - self.start_time
+        return time.time() - self.start_time
 
     def get_fps(self):
         return self.frame_counter/self.get_time_difference()
 
     def reset(self):
         self.frame_counter = 0
-        self.start_time = time.perf_counter()
+        self.start_time = time.time()
 
 
 fpsTimer = FPSTimer()
@@ -99,8 +99,6 @@ class VideoTransformTrack(MediaStreamTrack):
         fpsTimer.add_frame()
         # print some stats every second
         if fpsTimer.get_time_difference() > 1.0:
-            transceivers = self.pc.getTransceivers()
-            senders = self.pc.getSenders()
             # print fps
             logger.info("FPS: " + str(fpsTimer.get_fps()))
             fpsTimer.reset()

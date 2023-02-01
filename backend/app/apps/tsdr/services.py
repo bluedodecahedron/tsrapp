@@ -12,32 +12,68 @@ from app.apps.tsdr.tsdr_result import TsdrResult
 import yolox.tools.demo as tsd_demo
 from yolox.tools.infer_result import InferResult as TsdResult
 import yolox.exp.example.custom.yolox_s_gtsdb as gtsdb
-import tsrresnet.tools.inference as tsr_infer
+import tsrresnet.tools.inference as tsr_inference
 from tsrresnet.tools.model import NUM_CLASSES
 from tsrresnet.tools.infer_result import InferResult as TsrResult
-from tsrresnet.tools.infer_result import InferResultList as TsrResultList
 
 
 logger = logging.getLogger('backend')
 
+ICONS_FOLDER = "resources/images/classes"
+TSD_MODEL = 'resources/gtsdb_best_ckpt.pth'
+TSR_MODEL = 'resources/model.pth'
+CLASS_NAMES = 'resources/signnames.csv'
+TSD_CONFIDENCE = 0.8
+TSR_CONFIDENCE = 0.95
+TSR_MAX_WORKERS = 5
 
-def get_tsd_predictor():
+
+def build_tsd_predictor():
     logger.info('Initializing yoloX pytorch model for traffic sign detection')
     predictor = tsd_demo.PredictorBuilder(
         exp=gtsdb.Exp(),
         options='image '
                 '-n yolox-s '
-                '-c resources/gtsdb_best_ckpt.pth '
+                f'-c {TSD_MODEL} '
                 '--device gpu '
                 '--tsize 800 '
-                '--conf 0.8'
+                f'--conf {TSD_CONFIDENCE}'
     ).build()
     predictor.warmup(2)
     logger.info('Initialization of yoloX pytorch model complete')
     return predictor
 
 
-predictor = get_tsd_predictor()
+def build_tsr_predictor():
+    logger.info('Initializing resnet pytorch model for traffic sign classification')
+    predictor = tsr_inference.Predictor(
+        model_path=TSR_MODEL,
+        classes_path=CLASS_NAMES,
+        max_workers=TSR_MAX_WORKERS,
+        confthre=TSR_CONFIDENCE
+    )
+    return predictor
+
+
+def build_tsr_result():
+    result = TsrResult(CLASS_NAMES)
+    return result
+
+
+tsd_predictor = build_tsd_predictor()
+tsr_predictor = build_tsr_predictor()
+tsr_infer_result = build_tsr_result()
+
+
+def load_icons():
+    icons = []
+    for i in range(len(tsr_infer_result.class_names)):
+        icon = cv2.imread(f"{ICONS_FOLDER}/{i}.png", cv2.IMREAD_UNCHANGED)
+        icons.append(icon)
+    return icons
+
+
+icon_list = load_icons()
 
 
 def save_result(result_image):
@@ -51,15 +87,15 @@ def save_result(result_image):
 
 
 def tsd(image):
-    tsd_result = predictor.inference(image)
-    return tsd_result
+    result = tsd_predictor.inference(image)
+    return result
 
 
 def tsd_file(image_file):
     image = cv2.imdecode(np.frombuffer(image_file.file.read(), np.uint8), cv2.IMREAD_UNCHANGED)
 
-    outputs, img_info = predictor.inference(image)
-    result_image = predictor.visual(outputs[0], img_info, predictor.confthre)
+    outputs, img_info = tsd_predictor.inference(image)
+    result_image = tsd_predictor.visual(outputs[0], img_info, tsd_predictor.confthre)
     save_file_name = save_result(result_image)
 
     # img_encode = bytearray(cv2.imencode('.png', result_image)[1])
@@ -69,25 +105,22 @@ def tsd_file(image_file):
     return image_file
 
 
-def tsr(image):
-    tsr_result = tsr_infer.predict_class(image, confthre=0.8)
-    return tsr_result
+def tsr(images):
+    result_list = tsr_predictor.multi_inference(images)
+    return result_list
 
 
 def tsdr(image):
     start_time = time.perf_counter()
     tsd_result = tsd(image)
     boxed_images = tsd_result.get_boxed_images()
-    tsr_result_list = TsrResultList()
-    for box in boxed_images:
-        tsr_result = tsr(box)
-        tsr_result_list.append(tsr_result)
+    logger.info("Tsd took: {:.4f}s".format(time.perf_counter() - start_time))
+    tsr_result_list = tsr(boxed_images)
+
     result_image = TsdrResult(tsd_result, tsr_result_list).visual()
-    #save_result(result_image)
-    end_time = time.perf_counter()
-    tsdr_infer_time = end_time - start_time
-    logger.info(f"Identified Classes ({tsr_result_list.infer_sum():.4f}s): {str(tsr_result_list)}")
-    logger.info(f"Overall infer time: {tsdr_infer_time:.4f}s")
+    # save_result(result_image)
+    logger.info(f"Identified Classes ({len(tsr_result_list.list)}, {tsr_result_list.multi_time:.4f}s): {str(tsr_result_list)}")
+    logger.info(f"Overall infer time: {time.perf_counter()-start_time:.4f}s")
     return tsr_result_list.get_class_ids(), result_image
 
 
@@ -100,7 +133,6 @@ class TsdrState:
         result_image = self.active_traffic_signs.update(image)
         self.video_builder.update(result_image)
         return result_image
-
 
     def release(self, *args):
         self.video_builder.release()
@@ -153,7 +185,6 @@ class VideoBuilder:
 
 class ActiveTrafficSigns:
     MIN_COUNT_NEEDED = 3
-    ICONS_FOLDER = "resources/images/classes"
     ICON_SIZE_PRCT = 0.1  # Icon width in percent of input image
 
     def __init__(self):
@@ -171,7 +202,8 @@ class ActiveTrafficSigns:
             else:
                 self.pop(class_id)
         logger.info(f"Active classes: {self.__str__()}")
-        return self.visual(result_image)
+        result_image = self.visual(result_image)
+        return result_image
 
     def push(self, class_id):
         if class_id in self.count_dic:
@@ -195,18 +227,16 @@ class ActiveTrafficSigns:
     def __str__(self):
         str_list = []
         for class_id in self.get_active_signs():
-            str_list.append(str(TsrResult.CLASS_NAMES[class_id]))
+            str_list.append(str(tsr_infer_result.class_names[class_id]))
         return ', '.join(str_list)
 
     def visual(self, image):
         active_signs = self.get_active_signs()
         for i in range(len(active_signs)):
             class_id = active_signs[i]
-            icon = cv2.imread(f"{ActiveTrafficSigns.ICONS_FOLDER}/{class_id}.png", cv2.IMREAD_UNCHANGED)
-            icon = self.resize_icon(icon, image)
+            icon = self.resize_icon(icon_list[class_id], image)
             x_offset, y_offset = self.calculate_offset(i, len(active_signs), image)
             image = self.overlay_icon(icon, image, x_offset, y_offset)
-        # TODO
 
         return image
 

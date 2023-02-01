@@ -1,16 +1,25 @@
 import pandas as pd
 
-# Class names.
-sign_names_df = pd.read_csv('resources/signnames.csv')
-class_names = sign_names_df.SignName.tolist()
-class_names.append('Unknown')
+
+class InferResult:
+    def __init__(self, classes_path):
+        sign_names_df = pd.read_csv(classes_path)
+        self.class_names = sign_names_df.SignName.tolist()
+        self.class_names.append('Unknown')
+
+    def result_list(self):
+        return ResultList(self.class_names)
+
+    def result(self, class_idx, top_prob, infer_time, confthre, q_index=0):
+        return Result(self.class_names, class_idx, top_prob, infer_time, confthre, q_index=q_index)
 
 
-class InferResultList:
-    def __init__(self):
+class ResultList:
+    def __init__(self, class_names, multi_time=0.0):
         self.list = []
         self.cls_names = class_names
         self.confthre = 0.0
+        self.multi_time = multi_time
 
     def append(self, infer_result):
         self.list.append(infer_result)
@@ -34,6 +43,12 @@ class InferResultList:
             prob_list.append(result.top_prob)
         return prob_list
 
+    def set_multi_time(self, multi_time):
+        self.multi_time = multi_time
+
+    def sort_by_qindex(self):
+        self.list.sort(key=lambda x: x.q_index)
+
     def __str__(self):
         str_list = []
         for result in self.list:
@@ -41,16 +56,15 @@ class InferResultList:
         return ', '.join(str_list)
 
 
-class InferResult:
-    CLASS_NAMES = class_names
-
-    def __init__(self, class_idx, top_prob, infer_time, confthre):
+class Result:
+    def __init__(self, class_names, class_idx, top_prob, infer_time, confthre, q_index=0):
+        self.cls_names = class_names
         self.class_idx = class_idx
         self.class_str = str(class_names[class_idx])
         self.top_prob = top_prob
         self.infer_time = infer_time
-        self.cls_names = class_names
         self.confthre = confthre
+        self.q_index = q_index
 
     def __str__(self):
         return f"{self.class_str} ({self.top_prob*100:.2f}%, {self.infer_time:.4f}s)"
