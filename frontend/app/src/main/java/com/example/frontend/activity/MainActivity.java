@@ -19,6 +19,7 @@ import androidx.core.content.ContextCompat;
 
 import com.example.frontend.R;
 import com.example.frontend.activity.tsdr.http.HttpActivity;
+import com.example.frontend.activity.tsdr.webrtc.StoppedActivity;
 import com.example.frontend.activity.tsdr.webrtc.WebrtcActivity;
 import com.example.frontend.schema.User;
 import com.example.frontend.service.LoginService;
@@ -104,7 +105,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     }
 
     private void startTsdrWebRTC() {
-        Intent intent = new Intent(this, WebrtcActivity.class);
+        Intent intent = new Intent(this, StoppedActivity.class);
         startActivity(intent);
     }
 

@@ -46,12 +46,14 @@ public class CustomPeerConnectionObserver implements PeerConnection.Observer {
     @Override
     public void onIceGatheringChange(PeerConnection.IceGatheringState iceGatheringState) {
         Log.i(TAG, "onIceGatheringChange: " + iceGatheringState);
+        if(iceGatheringState == PeerConnection.IceGatheringState.COMPLETE) {
+            onIceGatheringComplete.run();
+        }
     }
 
     @Override
     public void onIceCandidate(IceCandidate iceCandidate) {
         Log.i(TAG, "onIceCandidate: " + iceCandidate);
-        onIceGatheringComplete.run();
     }
 
     @Override

@@ -9,6 +9,7 @@ import org.webrtc.VideoFrame;
 public class SurfaceRenderer extends SurfaceViewRenderer {
     private String TAG;
     private StatisticsRenderer statsRenderer;
+    private boolean firstFrame = true;
 
     public SurfaceRenderer(Context context) {
         super(context);
