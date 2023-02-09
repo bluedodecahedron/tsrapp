@@ -14,7 +14,7 @@ images = all_images
 class TestInference(TestCase):
     def setUp(self) -> None:
         self.predictor = inference.Predictor(
-            '../../outputs/model.pth',
+            '../../outputs/models/03022023_resnet50_differentaugs_75epochs/model.pth',
             '../../input/signnames.csv',
             max_workers=5,
             confthre=0.95

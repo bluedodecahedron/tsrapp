@@ -19,13 +19,15 @@ from aiortc.rtcrtpsender import RTCRtpSender
 
 logger = logging.getLogger('backend')
 aiortc.codecs.vpx.MIN_BITRATE = 1000000
-aiortc.codecs.vpx.DEFAULT_BITRATE = 1500000
-aiortc.codecs.vpx.MAX_BITRATE = 2000000
-aiortc.codecs.vpx.MAX_FRAME_RATE = 60
+aiortc.codecs.vpx.DEFAULT_BITRATE = 3000000
+aiortc.codecs.vpx.MAX_BITRATE = 5000000
+aiortc.codecs.vpx.MAX_FRAME_RATE = 20
+aiortc.codecs.vpx.PACKET_MAX = 700
 aiortc.codecs.h264.MIN_BITRATE = 1000000
-aiortc.codecs.h264.DEFAULT_BITRATE = 2000000
-aiortc.codecs.h264.MAX_BITRATE = 10000000
-aiortc.codecs.h264.MAX_FRAME_RATE = 60
+aiortc.codecs.h264.DEFAULT_BITRATE = 3000000
+aiortc.codecs.h264.MAX_BITRATE = 3000000
+aiortc.codecs.h264.MAX_FRAME_RATE = 20
+aiortc.codecs.h264.PACKET_MAX = 700
 pcs = set()
 relay = MediaRelay()
 

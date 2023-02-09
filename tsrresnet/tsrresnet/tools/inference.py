@@ -1,3 +1,5 @@
+import traceback
+
 import cv2
 import torch
 import albumentations as A
@@ -52,6 +54,9 @@ class Predictor:
         # Read the image.
         # image = cv2.imread(image_path)
         start_time = time.perf_counter()
+        # Return with unknown result if image has a dimension=0
+        if not all(image.shape):
+            return self.infer_result.result_unknown(q_index=q_index)
         orig_image = image.copy()
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         height, width, _ = orig_image.shape

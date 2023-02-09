@@ -18,56 +18,90 @@ BATCH_SIZE = 64
 NUM_WORKERS = 12 # Number of parallel processes for data preparation.
 
 
+def random_lines(img, **kwargs):
+    min_col_shift = [-30, -10, -30]
+    max_col_shift = [10, 0, 10]
+    width = img.shape[1]
+    height = img.shape[0]
+    num_lines = 1+int(10*random.random())
+    new_img = img
+    avg_color_per_row = np.average(new_img, axis=0)
+    avg_color = np.average(avg_color_per_row, axis=0)
+    for i in range(num_lines):
+        r = []
+        for j in range(8):
+            r.append(random.random())
+        R = int(avg_color[0]+min_col_shift[0]+r[4]*(max_col_shift[0]-min_col_shift[0])*2)
+        G = int(avg_color[1]+min_col_shift[1]+r[5]*(max_col_shift[1]-min_col_shift[1])*2)
+        B = int(avg_color[2]+min_col_shift[2]+r[6]*(max_col_shift[2]-min_col_shift[2])*2)
+        if R < 0:
+            R = 0
+        if G < 0:
+            G = 0
+        if B < 0:
+            B = 0
+        new_img = cv2.line(
+            img=new_img,
+            pt1=(int(r[0]*width), int(r[1]*height)),
+            pt2=(int(r[2]*width), int(r[3]*height)),
+            color=(R, G, B),
+            thickness=1+int(r[7]*3)
+        )
+    return new_img
+
+
 # Training transforms.
 class TrainTransforms:
     augments = [
+        # Random elastic transform
+        A.ElasticTransform(alpha=200, alpha_affine=0, sigma=10, p=0.5),
+        # Random Shift, Scale, Perspective
         A.OneOf([
-            # Convert to grayscale, then invert bright/dark (Simulates digital signs)
-            A.Compose([
-                A.ToGray(p=1.0),
-                A.InvertImg(p=1.0)
-            ], p=0.2),
-            # Add random shadow
-            A.RandomShadow(shadow_roi=(0, 0, 1, 0.75), num_shadows_lower=1, num_shadows_upper=1, shadow_dimension=3,
-                           p=0.8),
-        ], p=0.5),
-        # Randomize brightness, contrast, hue, saturation
-        A.ColorJitter(brightness=(0.8, 1.3), contrast=(0.8, 1.2), saturation=(0.8, 1.2), hue=(-0.1, 0.1), p=1.0),
-        # Randomize Gamma
-        A.RandomGamma(gamma_limit=(80, 120), p=0.33),
-        # Histogram Equalization
-        # A.CLAHE(clip_limit=4.0, tile_grid_size=(8, 8), p=1),
-        # Random Shift, Scale, Rotate
-        A.ShiftScaleRotate(shift_limit=0.1, scale_limit=(-0.1, 0.6), rotate_limit=15, p=1.0),
-        # Random Distortion
-        A.GridDistortion(distort_limit=0.1, p=0.5),
-        # Random Blur (Motion, Zoom, Focus)
+            # Random Shift, Scale
+            A.ShiftScaleRotate(shift_limit=0.1, scale_limit=(0.3, 0.5), rotate_limit=0, p=0.4),
+            # Perspective
+            A.Perspective(scale=(0.05, 0.15), p=0.6),
+        ], p=1.0),
+        # Random color changes
+        A.ColorJitter(brightness=(0.8, 1.2), contrast=(0.8, 1.2), saturation=(0.8, 1.2), hue=(-0.1, 0.1), p=0.8),
+        # Random Sharpen
+        A.Sharpen(alpha=(0.3, 0.4), lightness=(1.0, 1.0), p=0.6),
+        # Random shadow
+        A.RandomShadow(shadow_roi=(0, 0, 1, 0.75), num_shadows_lower=1, num_shadows_upper=1, shadow_dimension=3, p=0.4),
+        # Add random lines
+        A.Lambda(image=random_lines, p=1.0),
+        # Reduce image quality
         A.OneOf([
-            A.MotionBlur(blur_limit=(7, 21), p=0.5),
-            A.ZoomBlur(max_factor=(1, 1.4), p=0.5),
-            A.Defocus(alias_blur=(0.5, 0.7), p=0.5)
-        ], p=0.33),
-        # Simulates fog
-        A.RandomFog(p=0.33),
-        # Simulates rain
-        A.RandomRain(p=0.25),
-        # Simulate Sun Flare
+            # Random motion blur
+            A.MotionBlur(blur_limit=(7, 21), p=0.2),
+            # Random defocus blur
+            A.Defocus(alias_blur=(0.5, 0.7), p=0.1),
+            # Use downsampling, simulating far away traffic signs
+            A.Sequential([
+                A.RandomScale(scale_limit=(-0.90, -0.80), p=1.0),
+                A.ImageCompression(quality_lower=80, quality_upper=90, p=0.5),
+                A.Resize(RESIZE_TO, RESIZE_TO),
+            ], p=0.7),
+        ], p=0.7),
+        # Random Noise
+        A.GaussNoise(var_limit=(50.0, 100.0), p=0.33),
+        # Simulates weather
         A.OneOf([
+            # Simulates mud
+            A.Spatter(mode="mud", p=0.3),
+            # Simulates fog
+            A.RandomFog(p=0.3),
+            # Simulates rain
+            A.RandomRain(p=0.3),
             # Add a yellow sun flare
-            A.RandomSunFlare(flare_roi=(0.2, 0.2, 1, 0.5), angle_lower=0.5, num_flare_circles_lower=4, src_radius=100,
-                             src_color=(204, 255, 255), p=0.5),
+            A.RandomSunFlare(flare_roi=(0.0, 0.0, 1, 1), angle_lower=0.5,
+                             num_flare_circles_lower=3, num_flare_circles_upper=6, src_radius=70,
+                             src_color=(204, 255, 255), p=0.05),
             # Add a red sun flare
-            A.RandomSunFlare(flare_roi=(0.2, 0.2, 1, 0.5), angle_lower=0.5, num_flare_circles_lower=4, src_radius=100,
-                             src_color=(204, 204, 255), p=0.5),
+            A.RandomSunFlare(flare_roi=(0.0, 0.0, 1, 1), angle_lower=0.5,
+                             num_flare_circles_lower=3, num_flare_circles_upper=6, src_radius=70,
+                             src_color=(204, 204, 255), p=0.05),
         ], p=0.25),
-        # Reduce Image quality, simulating far away traffic signs
-        A.Compose([
-            A.ColorJitter(brightness=(1.0, 1.2), contrast=(0.4, 0.8), saturation=(1.0, 3.0), hue=(0.0, 0.0), p=1.0),
-            A.RandomScale(scale_limit=(-0.90, -0.80), p=1.0),
-            A.ImageCompression(quality_lower=80, quality_upper=90, p=0.5),
-            A.Resize(RESIZE_TO, RESIZE_TO),
-        ], p=0.33),
-        # A.Downscale(scale_min=0.05, scale_max=0.15, p=1.0, interpolation=cv2.INTER_CUBIC),
     ]
 
     def __init__(self):
@@ -151,7 +185,7 @@ def get_data_loaders(dataset_train, dataset_valid):
 
 def visualize_transform():
     # Run for all the test images.
-    all_images = glob.glob(f'{ROOT_DIR}/00001/*.ppm')
+    all_images = glob.glob(f'{ROOT_DIR}/00003/*.ppm')
 
     transform = A.Compose([
         A.Resize(RESIZE_TO, RESIZE_TO),

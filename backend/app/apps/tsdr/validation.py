@@ -68,3 +68,42 @@ class TsdrGtsdbValidationTestCase(TestCase):
             f'Recall: {recall}\n'
         )
         cv2.destroyAllWindows()
+
+
+class VideoTestCase(TestCase):
+    FRAME_DIM = 960
+    vid_dir = 'resources/videos'
+    vid1 = 'Zurich_back_highway_parking_street.mp4'
+    vid2 = 'Zurich_sun.mp4'
+    vid3 = 'Inssi Dashcam Footage.mp4'
+    vid4 = 'Inssi short.mp4'
+
+    def resize(self, image):
+        height, width, _ = image.shape
+        scale = self.FRAME_DIM / max(width, height)
+        width = int(width * scale)
+        height = int(height * scale)
+
+        image = cv2.resize(image, (width, height))
+        return image
+
+    def test_video(self):
+        for vid in [self.vid4, self.vid3, self.vid2, self.vid1]:
+            vidcap = cv2.VideoCapture(f'{self.vid_dir}/{vid}')
+            video_fps = vidcap.get(cv2.CAP_PROP_FPS)
+            skip_frames = False
+            if video_fps > 15:
+                video_fps = int(video_fps/2)
+                skip_frames = True
+            self.tsdr_state = services.TsdrState(video_fps=video_fps)
+            success, image = vidcap.read()
+            count = 1
+            while success:
+                if skip_frames and (count % 2 == 0):
+                    pass
+                else:
+                    image = self.resize(image)
+                    self.tsdr_state.update(image)
+                success, image = vidcap.read()
+                count += 1
+            self.tsdr_state.release()

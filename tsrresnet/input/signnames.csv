@@ -42,4 +42,15 @@ ClassId,SignName
 40,Roundabout mandatory
 41,End of no passing
 42,End of no passing by vehicles over 3.5 metric tons
-43,Other
+43,Cattle crossing
+44,Railroad crossing ahead
+45,Uncontrolled crossroad ahead
+46,Vehicles wider/higher than indicated prohibited
+47,Turning left prohibited
+48,Turning right prohibited
+49,Shared path for pedestrians and cyclists
+50,Divided path for pedestrians and cyclists
+51,Parking restrictions
+52,End of priority road
+53,Path for cyclists
+54,Other

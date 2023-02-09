@@ -8,7 +8,7 @@ from tqdm.auto import tqdm
 
 from tsrresnet.tools.model import build_model
 from datasets import get_datasets, get_data_loaders
-from utils import save_model, save_plots
+from utils import Saver
 
 seed = 42
 torch.manual_seed(seed)
@@ -156,7 +156,8 @@ if __name__ == '__main__':
     print(f"{total_trainable_params:,} training parameters.")
 
     # Optimizer.
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    optimizer = optim.AdamW(model.parameters(), lr=lr, betas=(0.9, 0.999), weight_decay=0.0001)
+    # optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=0.001)
     # Loss function.
     criterion = nn.CrossEntropyLoss()
 
@@ -164,7 +165,7 @@ if __name__ == '__main__':
         optimizer, 
         T_0=10, 
         T_mult=1,
-        verbose=False
+        eta_min=0
     )
 
     # Lists to keep track of losses and accuracies.
@@ -188,9 +189,10 @@ if __name__ == '__main__':
         print(f"Validation loss: {valid_epoch_loss:.3f}, validation acc: {valid_epoch_acc:.3f}")
         print('-'*50)
         time.sleep(5)
-        
+
+    saver = Saver()
     # Save the trained model weights.
-    save_model(epochs, model, optimizer, criterion)
+    saver.save_model(epochs, model, optimizer, criterion)
     # Save the loss and accuracy plots.
-    save_plots(train_acc, valid_acc, train_loss, valid_loss)
+    saver.save_plots(train_acc, valid_acc, train_loss, valid_loss)
     print('TRAINING COMPLETE')

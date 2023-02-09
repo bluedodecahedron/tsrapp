@@ -34,7 +34,7 @@ model = build_model(
 model = model.eval()
 model.load_state_dict(
     torch.load(
-        '../outputs/model.pth', map_location=device
+        '../outputs/models/model.pth', map_location=device
     )['model_state_dict']
 )
 

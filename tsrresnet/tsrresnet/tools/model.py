@@ -1,7 +1,7 @@
 import torchvision.models as models
 import torch.nn as nn
 
-NUM_CLASSES = 44
+NUM_CLASSES = 55
 
 
 def build_model(model='resnet50', pretrained=True, fine_tune=False, num_classes=NUM_CLASSES):

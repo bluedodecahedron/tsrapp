@@ -13,6 +13,9 @@ class InferResult:
     def result(self, class_idx, top_prob, infer_time, confthre, q_index=0):
         return Result(self.class_names, class_idx, top_prob, infer_time, confthre, q_index=q_index)
 
+    def result_unknown(self, q_index=0):
+        return Result(self.class_names, len(self.class_names)-1, 0.0, 0.0, 0.0, q_index=q_index)
+
 
 class ResultList:
     def __init__(self, class_names, multi_time=0.0):

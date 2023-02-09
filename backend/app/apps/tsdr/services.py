@@ -13,7 +13,6 @@ import yolox.tools.demo as tsd_demo
 from yolox.tools.infer_result import InferResult as TsdResult
 import yolox.exp.example.custom.yolox_s_gtsdb as gtsdb
 import tsrresnet.tools.inference as tsr_inference
-from tsrresnet.tools.model import NUM_CLASSES
 from tsrresnet.tools.infer_result import InferResult as TsrResult
 
 
@@ -23,9 +22,13 @@ ICONS_FOLDER = "resources/images/classes"
 TSD_MODEL = 'resources/gtsdb_best_ckpt.pth'
 TSR_MODEL = 'resources/model.pth'
 CLASS_NAMES = 'resources/signnames.csv'
-TSD_CONFIDENCE = 0.8
-TSR_CONFIDENCE = 0.95
+TSD_CONFIDENCE = 0.7
+TSR_CONFIDENCE = 0.8
 TSR_MAX_WORKERS = 5
+
+VIDEO_OUTPUT_ROOT = 'storage/videos'
+VIDEO_FPS = 15.0
+VIDEO_MAX_SECONDS = 1 * 60 * 60  # 1 hour in seconds
 
 
 def build_tsd_predictor():
@@ -67,7 +70,7 @@ tsr_infer_result = build_tsr_result()
 
 def load_icons():
     icons = []
-    for i in range(len(tsr_infer_result.class_names)):
+    for i in range(len(tsr_infer_result.class_names)-2):
         icon = cv2.imread(f"{ICONS_FOLDER}/{i}.png", cv2.IMREAD_UNCHANGED)
         icons.append(icon)
     return icons
@@ -125,9 +128,10 @@ def tsdr(image):
 
 
 class TsdrState:
-    def __init__(self):
-        self.active_traffic_signs = ActiveTrafficSigns()
-        self.video_builder = VideoBuilder()
+    def __init__(self, video_fps=VIDEO_FPS):
+        time_now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")[:-3]
+        self.active_traffic_signs = ActiveTrafficSigns(logfile_name=time_now, video_fps=video_fps)
+        self.video_builder = VideoBuilder(file_name=time_now, video_fps=video_fps)
 
     def update(self, image):
         result_image = self.active_traffic_signs.update(image)
@@ -135,18 +139,15 @@ class TsdrState:
         return result_image
 
     def release(self, *args):
+        self.active_traffic_signs.release()
         self.video_builder.release()
 
 
 class VideoBuilder:
-    VIDEO_OUTPUT_ROOT = 'storage/videos'
-    FPS = 10.0
-    MAX_SECONDS = 2*60*60  # 2 hours in seconds
-    MAX_FRAMES = MAX_SECONDS * FPS
-
-    def __init__(self):
-        time_now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")[:-3]
-        self.videoOutput = VideoBuilder.VIDEO_OUTPUT_ROOT + f'/{time_now}.mp4'
+    def __init__(self, file_name, video_fps=VIDEO_FPS):
+        self.videoOutput = VIDEO_OUTPUT_ROOT + f'/{file_name}.mp4'
+        self.videoFps = video_fps
+        self.video_max_frames = VIDEO_MAX_SECONDS * self.videoFps
         self.frameSize = None
         self.videoWriter = None
         self.frameCounter = 0
@@ -155,7 +156,7 @@ class VideoBuilder:
         self.add_frame(image.copy())
 
     def add_frame(self, frame):
-        if self.frameCounter == VideoBuilder.MAX_FRAMES:
+        if self.frameCounter == self.video_max_frames:
             self.release()
 
         if self.videoWriter is None:
@@ -170,11 +171,11 @@ class VideoBuilder:
         height, width, _ = frame.shape
         self.frameSize = (width, height)
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Be sure to use lower case
-        self.videoWriter = cv2.VideoWriter(self.videoOutput, fourcc, VideoBuilder.FPS, self.frameSize)
+        self.videoWriter = cv2.VideoWriter(self.videoOutput, fourcc, self.videoFps, self.frameSize)
 
     def create_root(self):
-        if not os.path.exists(VideoBuilder.VIDEO_OUTPUT_ROOT):
-            os.makedirs(VideoBuilder.VIDEO_OUTPUT_ROOT)
+        if not os.path.exists(VIDEO_OUTPUT_ROOT):
+            os.makedirs(VIDEO_OUTPUT_ROOT)
 
     def release(self):
         if self.videoWriter is not None:
@@ -184,13 +185,27 @@ class VideoBuilder:
 
 
 class ActiveTrafficSigns:
+    # Number of frames in a row that a traffic sign needs to be detected to count as active
     MIN_COUNT_NEEDED = 3
-    ICON_SIZE_PRCT = 0.1  # Icon width in percent of input image
+    # Number of seconds a traffic sign has to be inactive before it gets logged again
+    MIN_DELAY_LOG = 2
+    # Icon width in percent of input image
+    ICON_SIZE_PRCT = 0.1
+    # Do not count the last x classes in class_names as active
+    CLASSES_TO_IGNORE = 13
 
-    def __init__(self):
+    def __init__(self, logfile_name, video_fps=VIDEO_FPS):
         self.count_dic = {}
+        self.frame_dic = {}
+        self.video_fps = video_fps
+        self.frameCount = 0
+        self.active_log = []
+        self.logfile_path = f'{VIDEO_OUTPUT_ROOT}/{logfile_name}.txt'
+        self.log_file = open(self.logfile_path, 'a')
 
     def update(self, image):
+        self.frameCount += 1
+        start_time = time.perf_counter()
         detected_classes, result_image = tsdr(image)
         combined_set = set(self.count_dic.keys())
         combined_set.update(set(detected_classes))
@@ -198,31 +213,52 @@ class ActiveTrafficSigns:
         # reset counter if class is not detected anymore
         for class_id in combined_set:
             if class_id in detected_classes:
-                self.push(class_id)
+                self.append(class_id)
             else:
-                self.pop(class_id)
+                self.remove(class_id)
         logger.info(f"Active classes: {self.__str__()}")
         result_image = self.visual(result_image)
+        logger.info(f"Overall update time: {time.perf_counter() - start_time:.4f}s")
         return result_image
 
-    def push(self, class_id):
+    def append(self, class_id):
         if class_id in self.count_dic:
             self.count_dic[class_id] += 1
         else:
             self.count_dic[class_id] = 1
 
-    def pop(self, class_id):
+    def remove(self, class_id):
         self.count_dic.pop(class_id)
 
     def get_active_signs(self):
         active_classes = []
         for class_id in self.count_dic:
-            if self.count_dic[class_id] >= ActiveTrafficSigns.MIN_COUNT_NEEDED:
-                if class_id == NUM_CLASSES or class_id == NUM_CLASSES-1:
+            if self.count_dic[class_id] >= self.MIN_COUNT_NEEDED:
+                if class_id >= len(tsr_infer_result.class_names)-self.CLASSES_TO_IGNORE:
+                    # traffic sign is ignored
                     pass
                 else:
                     active_classes.append(class_id)
+                    self.log(class_id)
+                    self.frame_dic[class_id] = self.frameCount
         return active_classes
+
+    def log(self, class_id):
+        is_delay = True
+        if class_id in self.frame_dic:
+            frames_diff = self.frameCount - self.frame_dic[class_id]
+            frames_needed = self.video_fps * self.MIN_DELAY_LOG
+            is_delay = frames_diff > frames_needed
+        is_new = self.count_dic[class_id] == self.MIN_COUNT_NEEDED
+        if is_new and is_delay:
+            time_passed = self.frameCount / self.video_fps
+            class_name = str(tsr_infer_result.class_names[class_id])
+            self.log_file.write(f'{self.to_hhmmss(time_passed)} {class_name}\n')
+            # self.active_log.append(f'{self.to_hhmmss(time_passed)} {class_name}')
+
+    def release(self):
+        logger.info(f'Releasing log file {self.logfile_path}')
+        self.log_file.close()
 
     def __str__(self):
         str_list = []
@@ -275,6 +311,14 @@ class ActiveTrafficSigns:
             bg_img[y1:y2, x1:x2, c] = (alpha_s * img_dst[:, :, c] + alpha_l * bg_img[y1:y2, x1:x2, c])
 
         return bg_img
+
+    def to_hhmmss(self, seconds):
+        hours = seconds // (60 * 60)
+        seconds %= (60 * 60)
+        minutes = seconds // 60
+        seconds %= 60
+        return "%02i:%02i:%02i" % (hours, minutes, seconds)
+
 
 
 

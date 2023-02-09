@@ -58,8 +58,8 @@ public class WebrtcActivity extends AppCompatActivity {
     public static final int MIN_BITRATE = 1000000;
     public static final int DEFAULT_BITRATE = 3000000;
     public static final int MAX_BITRATE = 5000000;
-    public static final boolean ENABLE_INTEL_VP8_ENCODER = true;
-    public static final boolean ENABLE_H264_HIGH_PROFILE = true;
+    public static final boolean ENABLE_INTEL_VP8_ENCODER = false;
+    public static final boolean ENABLE_H264_HIGH_PROFILE = false;
 
 
     private ActivityWebrtcBinding binding;
