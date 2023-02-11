@@ -63,6 +63,7 @@ def train(
             train_running_loss += loss.item()
             # Calculate the accuracy.
             _, preds = torch.max(outputs.data, 1)
+            _, labels = torch.max(labels, 1)
             train_running_correct += (preds == labels).sum().item()
             # Backpropagation.
             loss.backward()
@@ -71,7 +72,7 @@ def train(
 
             if scheduler is not None:
                 scheduler.step(epoch + i / iters)
-    
+
     # Loss and accuracy for the complete epoch.
     epoch_loss = train_running_loss / counter
     epoch_acc = 100. * (train_running_correct / len(trainloader.dataset))
@@ -104,10 +105,11 @@ def validate(model, testloader, criterion, class_names):
             valid_running_loss += loss.item()
             # Calculate the accuracy.
             _, preds = torch.max(outputs.data, 1)
+            _, labels = torch.max(labels, 1)
             valid_running_correct += (preds == labels).sum().item()
 
             # Calculate the accuracy for each class.
-            correct  = (preds == labels).squeeze()
+            correct = (preds == labels).squeeze()
             for i in range(len(preds)):
                 label = labels[i]
                 class_correct[label] += correct[i].item()
@@ -156,17 +158,19 @@ if __name__ == '__main__':
     print(f"{total_trainable_params:,} training parameters.")
 
     # Optimizer.
-    optimizer = optim.AdamW(model.parameters(), lr=lr, betas=(0.9, 0.999), weight_decay=0.0001)
+    optimizer = optim.Adam(model.parameters(), lr=lr, betas=(0.9, 0.999))
     # optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=0.001)
     # Loss function.
     criterion = nn.CrossEntropyLoss()
 
+    restart_cycle = 15
     scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
         optimizer, 
-        T_0=10, 
+        T_0=restart_cycle,
         T_mult=1,
         eta_min=0
     )
+    saver = Saver()
 
     # Lists to keep track of losses and accuracies.
     train_loss, valid_loss = [], []
@@ -189,10 +193,12 @@ if __name__ == '__main__':
         print(f"Validation loss: {valid_epoch_loss:.3f}, validation acc: {valid_epoch_acc:.3f}")
         print('-'*50)
         time.sleep(5)
+        # Save model every x epochs
+        if epoch % restart_cycle == 0 and not (epoch == epochs-1):
+            saver.save_model(epoch, model, optimizer, criterion)
 
-    saver = Saver()
-    # Save the trained model weights.
-    saver.save_model(epochs, model, optimizer, criterion)
+    # Save final model
+    saver.save_model(epochs, model, optimizer, criterion, final=True)
     # Save the loss and accuracy plots.
     saver.save_plots(train_acc, valid_acc, train_loss, valid_loss)
     print('TRAINING COMPLETE')

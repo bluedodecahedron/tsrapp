@@ -5,9 +5,10 @@ import cv2
 import glob as glob
 import random
 import PIL
+import math
 
 from torchvision import datasets
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader, Subset, Dataset
 from albumentations.pytorch import ToTensorV2
 
 # Required constants.
@@ -50,9 +51,65 @@ def random_lines(img, **kwargs):
     return new_img
 
 
+def random_remove(img, **kwargs):
+    width = img.shape[1]
+    height = img.shape[0]
+    min_aspect_ratio = 1
+    max_aspect_ratio = 5
+    min_area_ratio = 0.05
+    max_area_ratio = 0.1
+    min_rect_width = width/6
+    min_rect_height = height/6
+    max_rect_width = width/3
+    max_rect_height = height/3
+    max_dist_width = width/5
+    max_dist_height = height/5
+    area = width * height
+
+    for attempt in range(5):
+        # define random variables
+        r = []
+        for j in range(6):
+            r.append(random.random())
+
+        rectangle_area = random.uniform(min_area_ratio, max_area_ratio) * area
+        aspect_ratio = random.uniform(min_aspect_ratio, max_aspect_ratio)
+        if r[0] > 0.5:
+            aspect_ratio = 1/aspect_ratio
+
+        h = int(math.sqrt(rectangle_area * aspect_ratio))
+        w = int(math.sqrt(rectangle_area / aspect_ratio))
+
+        if max_dist_width+w < width and max_dist_height+h < height:
+            # Define points of the rectangle
+            if r[1] < 0.5:
+                x1 = int(max_dist_width*r[2])
+                x2 = x1 + w
+            else:
+                x2 = int(width-max_dist_width*r[2])
+                x1 = x2 - w
+            if r[3] < 0.5:
+                y1 = int(max_dist_height*r[4])
+                y2 = y1 + h
+            else:
+                y2 = int(height-max_dist_height*r[4])
+                y1 = y2 - h
+
+            # Generate Gaussian noise
+            noise = np.random.randn(*img[y1:y2, x1:x2].shape) * 50
+
+            # Add the noise to the image
+            img[y1:y2, x1:x2] = noise
+
+            return img
+
+    return img
+
+
+
 # Training transforms.
 class TrainTransforms:
-    augments = [
+    augments = A.Compose([
         # Random elastic transform
         A.ElasticTransform(alpha=200, alpha_affine=0, sigma=10, p=0.5),
         # Random Shift, Scale, Perspective
@@ -66,33 +123,37 @@ class TrainTransforms:
         A.ColorJitter(brightness=(0.8, 1.2), contrast=(0.8, 1.2), saturation=(0.8, 1.2), hue=(-0.1, 0.1), p=0.8),
         # Random Sharpen
         A.Sharpen(alpha=(0.3, 0.4), lightness=(1.0, 1.0), p=0.6),
+        A.OneOf([
+            # Add random lines
+            A.Lambda(image=random_lines, p=0.5),
+            # Add random remove
+            A.Lambda(image=random_remove, p=0.5),
+        ], p=1.0),
         # Random shadow
         A.RandomShadow(shadow_roi=(0, 0, 1, 0.75), num_shadows_lower=1, num_shadows_upper=1, shadow_dimension=3, p=0.4),
-        # Add random lines
-        A.Lambda(image=random_lines, p=1.0),
         # Reduce image quality
         A.OneOf([
             # Random motion blur
-            A.MotionBlur(blur_limit=(7, 21), p=0.2),
+            A.MotionBlur(blur_limit=(7, 21), p=0.3),
             # Random defocus blur
             A.Defocus(alias_blur=(0.5, 0.7), p=0.1),
             # Use downsampling, simulating far away traffic signs
-            A.Sequential([
+            A.Compose([
                 A.RandomScale(scale_limit=(-0.90, -0.80), p=1.0),
                 A.ImageCompression(quality_lower=80, quality_upper=90, p=0.5),
                 A.Resize(RESIZE_TO, RESIZE_TO),
-            ], p=0.7),
+            ], p=0.6),
         ], p=0.7),
         # Random Noise
-        A.GaussNoise(var_limit=(50.0, 100.0), p=0.33),
+        A.GaussNoise(var_limit=(50.0, 100.0), p=0.25),
         # Simulates weather
         A.OneOf([
             # Simulates mud
-            A.Spatter(mode="mud", p=0.3),
+            A.Spatter(mode="mud", p=0.2),
             # Simulates fog
-            A.RandomFog(p=0.3),
+            A.RandomFog(p=0.2),
             # Simulates rain
-            A.RandomRain(p=0.3),
+            A.RandomRain(p=0.5, brightness_coefficient=1.0),
             # Add a yellow sun flare
             A.RandomSunFlare(flare_roi=(0.0, 0.0, 1, 1), angle_lower=0.5,
                              num_flare_circles_lower=3, num_flare_circles_upper=6, src_radius=70,
@@ -101,13 +162,13 @@ class TrainTransforms:
             A.RandomSunFlare(flare_roi=(0.0, 0.0, 1, 1), angle_lower=0.5,
                              num_flare_circles_lower=3, num_flare_circles_upper=6, src_radius=70,
                              src_color=(204, 204, 255), p=0.05),
-        ], p=0.25),
-    ]
+        ], p=0.20),
+    ], p=0.95)
 
     def __init__(self):
         self.transforms = A.Compose([
             A.Resize(RESIZE_TO, RESIZE_TO),
-            *TrainTransforms.augments,
+            TrainTransforms.augments,
             A.Normalize(
                 mean=[0.485, 0.456, 0.406],
                 std=[0.229, 0.224, 0.225]
@@ -135,20 +196,58 @@ class ValidTransforms:
         return self.transforms(image=np.array(img))['image']
 
 
-def get_datasets():
+class CustomImageFolderDataset(datasets.ImageFolder):
+    """
+    Infer from standard PyTorch Dataset class
+    Such datasets are often very useful
+    """
+
+    def __init__(self, root, transform, mix_up):
+        super().__init__(root, transform)
+        self.mix_up = mix_up
+
+    def __getitem__(self, idx):
+        image, label = super().__getitem__(idx)
+        num_classes = len(self.classes)
+
+        label = torch.zeros(num_classes)
+        label[self.targets[idx]] = 1
+
+        if self.mix_up:
+            p = random.random()
+            if p > 0.5:
+                mixup_idx = random.randint(0, self.__len__() - 1)
+                mixup_image, mixup_label = super().__getitem__(mixup_idx)
+
+                mixup_label = torch.zeros(num_classes)
+                mixup_label[self.targets[mixup_idx]] = 1
+
+                # Select a random number from the given beta distribution
+                # Mixup the images accordingly
+                alpha = 0.3
+                lam = np.random.beta(alpha, alpha)
+                image = lam * image + (1 - lam) * mixup_image
+                label = lam * label + (1 - lam) * mixup_label
+
+        return image, label
+
+
+def get_datasets(root=ROOT_DIR):
     """
     Function to prepare the Datasets.
 
     Returns the training and validation datasets along 
     with the class names.
     """
-    dataset = datasets.ImageFolder(
-        ROOT_DIR, 
-        transform=(TrainTransforms())
+    dataset = CustomImageFolderDataset(
+        root=root,
+        transform=(TrainTransforms()),
+        mix_up=True
     )
-    dataset_test = datasets.ImageFolder(
-        ROOT_DIR, 
-        transform=(ValidTransforms())
+    dataset_test = CustomImageFolderDataset(
+        root=root,
+        transform=(ValidTransforms()),
+        mix_up=False
     )
     dataset_size = len(dataset)
 
@@ -185,11 +284,11 @@ def get_data_loaders(dataset_train, dataset_valid):
 
 def visualize_transform():
     # Run for all the test images.
-    all_images = glob.glob(f'{ROOT_DIR}/00003/*.ppm')
+    all_images = glob.glob(f'{ROOT_DIR}/00025/*.ppm')
 
     transform = A.Compose([
         A.Resize(RESIZE_TO, RESIZE_TO),
-        *TrainTransforms.augments
+        TrainTransforms.augments
     ])
 
     random.seed(42)
