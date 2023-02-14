@@ -15,9 +15,6 @@ from tsrresnet.tools.infer_result import InferResult
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Define computation device.
-device = 'cuda'
-
 
 class Predictor:
     # Define the transforms, resize => tensor => normalize.
@@ -30,7 +27,8 @@ class Predictor:
         ToTensorV2(),
     ])
 
-    def __init__(self, model_path, classes_path, max_workers, confthre):
+    def __init__(self, model_path, classes_path, device, max_workers, confthre):
+        self.device = device
         self.model = self.build_model(model_path)
         self.infer_result = InferResult(classes_path)
         self.max_workers = max_workers
@@ -41,48 +39,64 @@ class Predictor:
         model = build_model(
             pretrained=False,
             fine_tune=False,
-        ).to(device)
+        ).to(self.device)
         model = model.eval()
         model.load_state_dict(
             torch.load(
-                model_path, map_location=device
+                model_path, map_location=self.device
             )['model_state_dict']
         )
         return model
 
+    def preprocess(self, img):
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # downscale image
+        img = cv2.resize(img, (50, 50))
+        img = cv2.resize(img, (224, 224))
+        # use some augmentations that were used during training
+        # size = 4
+        # kernel = np.ones((size, size), np.uint8)
+        # img = cv2.erode(img, kernel, iterations=1)
+        # img = cv2.GaussianBlur(img, (31, 31), 0)
+        transform = A.Compose([
+            A.ColorJitter(brightness=(1.0, 1.0), contrast=(1.3, 1.3), saturation=(1.3, 1.3), hue=(0.0, 0.0), p=1.0),
+            A.Emboss(alpha=(0.4, 0.4), strength=(0.4, 0.4), p=1.0),
+        ])
+        img = transform(image=img)['image']
+        # cv2.imshow("title", img)
+        # cv2.waitKey(0)
+        # Apply transforms to use as model input.
+        tensor = self.transform(image=img)['image']
+        return tensor
+
+    def build_result(self, probs, infer_time, q_index=0):
+        # get top probability
+        probs_sorted, indices = torch.sort(probs, descending=True)
+        take_x = 3
+        top_probs = probs_sorted[0:take_x].float()
+        # Get the class indices of top k probabilities.
+        classes_idx = topk(probs, take_x)[1].int().tolist()
+        return self.infer_result.result(classes_idx, top_probs, infer_time, self.confthre, q_index=q_index)
+
     def inference(self, image, q_index=0):
-        # Read the image.
-        # image = cv2.imread(image_path)
         start_time = time.perf_counter()
         # Return with unknown result if image has a dimension=0
         if not all(image.shape):
             return self.infer_result.result_unknown(q_index=q_index)
         orig_image = image.copy()
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        height, width, _ = orig_image.shape
-        # Apply the image transforms.
-        image_tensor = self.transform(image=image)['image']
+        tensor = self.preprocess(image)
         # Add batch dimension.
-        image_tensor = image_tensor.unsqueeze(0)
+        tensor = tensor.unsqueeze(0)
+        tensor = tensor.to(self.device)
         # Forward pass through model.
-        outputs = self.model(image_tensor.to(device))
+        outputs = self.model(tensor)
         # Get the softmax probabilities.
         probs = F.softmax(outputs, dim=1).data.squeeze()
-        # get top probability
-        probs_sorted, indices = torch.sort(probs, descending=True)
-        top_prob = probs_sorted[0].float()
-        # Get the class indices of top k probabilities.
-        class_idx = topk(probs, 1)[1].int()
-        # Set Unknown if prob below threshold
-        if top_prob < self.confthre:
-            # set to number of classes (=next index)
-            class_idx = self.model.fc.out_features
         end_time = time.perf_counter()
-        # Get the current fps.
         infer_time = end_time - start_time
-        return self.infer_result.result(int(class_idx), top_prob, infer_time, self.confthre, q_index=q_index)
+        return self.build_result(probs, infer_time, q_index)
 
-    def multi_inference(self, images):
+    def multi_inference_cpu(self, images):
         start_time = time.perf_counter()
         executor = ThreadPoolExecutor(max_workers=self.max_workers)
         futures = []
@@ -99,5 +113,33 @@ class Predictor:
         end_time = time.perf_counter()
         result_list.set_multi_time(end_time-start_time)
 
+        return result_list
+
+    def multi_inference_gpu(self, images):
+        start_time = time.perf_counter()
+        tensors = []
+        result_list = self.infer_result.result_list()
+        if len(images) == 0:
+            return result_list
+        for i, image in enumerate(images):
+            # Return with unknown result if image has a dimension=0
+            if not all(image.shape):
+                result = self.infer_result.result_unknown(q_index=i)
+                result_list.append(result)
+            tensor = self.preprocess(images[i])
+            tensors.append(tensor.to(self.device))
+        tensors = torch.stack(tensors).to(self.device)
+        # Forward pass through model.
+        outputs = self.model(tensors)
+        # Get the softmax probabilities.
+        probs_tensor = F.softmax(outputs, dim=1).data
+
+        end_time = time.perf_counter()
+        for i, probs in enumerate(probs_tensor):
+            # get top probability
+            result = self.build_result(probs, end_time-start_time, q_index=i)
+            result_list.append(result)
+
+        result_list.set_multi_time(end_time - start_time)
         return result_list
 

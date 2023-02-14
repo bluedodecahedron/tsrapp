@@ -15,17 +15,28 @@ class Saver:
     def __init__(self):
         time_now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")[:-3]
         self.base_folder = f'{BASE_FOLDER}/{time_now}'
+        os.makedirs(self.base_folder)
 
-    def save_model(self, epochs, model, optimizer, criterion, final=False):
+    def save_parameters(self, config):
+        with open(f'{self.base_folder}/config.txt', 'w') as f:
+            for key, value in config.items():
+                f.write(f'{key}:{value}\n')
+
+    def save_augmentations(self, aug_config):
+        with open(f'{self.base_folder}/aug_config.txt', 'w') as f:
+            for key, value in aug_config.items():
+                f.write(f'{key}:{str(value)}\n')
+
+    def save_model(self, epoch, model, optimizer, criterion, final=False):
         """
         Function to save the trained model to disk.
         """
-        folder = f'{self.base_folder}/epoch{epochs:03}'
+        folder = f'{self.base_folder}/epoch{epoch:03}'
         if final:
             folder = f'{folder}_final'
         os.makedirs(folder)
         torch.save({
-                    'epoch': epochs,
+                    'epoch': epoch,
                     'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
                     'loss': criterion,
@@ -64,3 +75,4 @@ class Saver:
         plt.ylabel('Loss')
         plt.legend()
         plt.savefig(f"{self.base_folder}/loss.png")
+        plt.close()

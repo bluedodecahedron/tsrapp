@@ -1,3 +1,5 @@
+import os
+
 import torch
 import albumentations as A
 import numpy as np
@@ -15,8 +17,8 @@ from albumentations.pytorch import ToTensorV2
 ROOT_DIR = '../input/GTSRB_Final_Training_Images/GTSRB/Final_Training/Images'
 VALID_SPLIT = 0.1
 RESIZE_TO = 224 # Image size of resize when applying transforms.
-BATCH_SIZE = 64
-NUM_WORKERS = 12 # Number of parallel processes for data preparation.
+BATCH_SIZE = 32
+NUM_WORKERS = 4 # Number of parallel processes for data preparation.
 
 
 def random_lines(img, **kwargs):
@@ -106,68 +108,74 @@ def random_remove(img, **kwargs):
     return img
 
 
+def erode(img, **kwargs):
+    size = 4 + int(5*random.random())
+    kernel = np.ones((size, size), np.uint8)
+    img_erode = cv2.erode(img, kernel, iterations=1)
+    return img_erode
+
+
+def dilate(img, **kwargs):
+    size = 4 + int(5*random.random())
+    kernel = np.ones((size, size), np.uint8)
+    img_dilate = cv2.dilate(img, kernel, iterations=1)
+    return img_dilate
+
 
 # Training transforms.
 class TrainTransforms:
     augments = A.Compose([
-        # Random elastic transform
-        A.ElasticTransform(alpha=200, alpha_affine=0, sigma=10, p=0.5),
-        # Random Shift, Scale, Perspective
-        A.OneOf([
-            # Random Shift, Scale
-            A.ShiftScaleRotate(shift_limit=0.1, scale_limit=(0.3, 0.5), rotate_limit=0, p=0.4),
-            # Perspective
-            A.Perspective(scale=(0.05, 0.15), p=0.6),
-        ], p=1.0),
+        A.Emboss(alpha=(0.4, 0.8), strength=(0.4, 0.8), p=0.20),
+        A.Sharpen(lightness=(1.0, 1.0), p=0.3),
+        A.FancyPCA(alpha=0.1, p=0.3),
         # Random color changes
-        A.ColorJitter(brightness=(0.8, 1.2), contrast=(0.8, 1.2), saturation=(0.8, 1.2), hue=(-0.1, 0.1), p=0.8),
-        # Random Sharpen
-        A.Sharpen(alpha=(0.3, 0.4), lightness=(1.0, 1.0), p=0.6),
+        A.ColorJitter(brightness=(0.8, 1.2), contrast=(0.8, 1.2), saturation=(0.8, 1.2), hue=(-0.05, 0.05), p=0.8),
+        # Randomly thicken or thin shapes
         A.OneOf([
-            # Add random lines
-            A.Lambda(image=random_lines, p=0.5),
-            # Add random remove
-            A.Lambda(image=random_remove, p=0.5),
-        ], p=1.0),
-        # Random shadow
-        A.RandomShadow(shadow_roi=(0, 0, 1, 0.75), num_shadows_lower=1, num_shadows_upper=1, shadow_dimension=3, p=0.4),
-        # Reduce image quality
-        A.OneOf([
-            # Random motion blur
-            A.MotionBlur(blur_limit=(7, 21), p=0.3),
-            # Random defocus blur
-            A.Defocus(alias_blur=(0.5, 0.7), p=0.1),
-            # Use downsampling, simulating far away traffic signs
-            A.Compose([
-                A.RandomScale(scale_limit=(-0.90, -0.80), p=1.0),
-                A.ImageCompression(quality_lower=80, quality_upper=90, p=0.5),
-                A.Resize(RESIZE_TO, RESIZE_TO),
-            ], p=0.6),
-        ], p=0.7),
-        # Random Noise
-        A.GaussNoise(var_limit=(50.0, 100.0), p=0.25),
-        # Simulates weather
-        A.OneOf([
-            # Simulates mud
-            A.Spatter(mode="mud", p=0.2),
-            # Simulates fog
-            A.RandomFog(p=0.2),
-            # Simulates rain
-            A.RandomRain(p=0.5, brightness_coefficient=1.0),
-            # Add a yellow sun flare
-            A.RandomSunFlare(flare_roi=(0.0, 0.0, 1, 1), angle_lower=0.5,
-                             num_flare_circles_lower=3, num_flare_circles_upper=6, src_radius=70,
-                             src_color=(204, 255, 255), p=0.05),
-            # Add a red sun flare
-            A.RandomSunFlare(flare_roi=(0.0, 0.0, 1, 1), angle_lower=0.5,
-                             num_flare_circles_lower=3, num_flare_circles_upper=6, src_radius=70,
-                             src_color=(204, 204, 255), p=0.05),
-        ], p=0.20),
+            A.Lambda(name='Dilate', image=dilate, p=0.5),
+            A.Lambda(name='Erode', image=erode, p=0.5),
+        ], p=0.3),
+        A.ShiftScaleRotate(shift_limit=0.05, scale_limit=(0.2, 0.4), rotate_limit=5, p=0.9),
+        A.Sequential([
+            A.OneOf([
+                # Randomly distort image
+                A.GridDistortion(distort_limit=0.2, p=0.2),
+                # Perspective
+                A.Perspective(scale=(0.05, 0.05), p=0.1),
+            ], p=0.3),
+            # Random shadow
+            A.RandomShadow(shadow_roi=(0, 0, 1, 0.75), num_shadows_lower=1, num_shadows_upper=1, shadow_dimension=3, p=0.3),
+            # Operations that can reduce image quality
+            A.OneOf([
+                # Randomly replace rectangular image parts with noise
+                A.Lambda(name='RandomRemove', image=random_remove, p=0.35),
+                # Use downsampling, simulating far away traffic signs
+                A.Sequential([
+                    A.RandomScale(scale_limit=(-0.90, -0.80), p=1.0),
+                    A.ImageCompression(quality_lower=80, quality_upper=90, p=0.5),
+                    A.Resize(RESIZE_TO, RESIZE_TO),
+                ], p=0.20),
+                # Simulate fog
+                A.RandomFog(p=0.1),
+                # Simulate rain
+                A.RandomRain(brightness_coefficient=1.0, p=0.3),
+                # Add a yellow sun flare
+                A.RandomSunFlare(flare_roi=(0.0, 0.0, 1, 1), angle_lower=0.5,
+                                 num_flare_circles_lower=3, num_flare_circles_upper=6, src_radius=70,
+                                 src_color=(204, 255, 255), p=0.05),
+                # Add a red sun flare
+                A.RandomSunFlare(flare_roi=(0.0, 0.0, 1, 1), angle_lower=0.5,
+                                 num_flare_circles_lower=3, num_flare_circles_upper=6, src_radius=70,
+                                 src_color=(204, 204, 255), p=0.05),
+            ], p=1.0),
+        ], p=0.8)
     ], p=0.95)
 
     def __init__(self):
         self.transforms = A.Compose([
-            A.Resize(RESIZE_TO, RESIZE_TO),
+            A.Resize(100, 100),
+            A.Resize(int(RESIZE_TO*1.1), int(RESIZE_TO*1.1)),
+            A.CenterCrop(RESIZE_TO, RESIZE_TO),
             TrainTransforms.augments,
             A.Normalize(
                 mean=[0.485, 0.456, 0.406],
@@ -175,9 +183,13 @@ class TrainTransforms:
                 ),
             ToTensorV2()
         ])
+        bla=0
     
     def __call__(self, img):
         return self.transforms(image=np.array(img))['image']
+
+    def __str__(self):
+        return self.transforms.__str__()
 
 
 # Validation transforms.
@@ -202,32 +214,43 @@ class CustomImageFolderDataset(datasets.ImageFolder):
     Such datasets are often very useful
     """
 
-    def __init__(self, root, transform, mix_up):
+    def __init__(self, root, transform, mix_up_p=0.0, mix_up_alpha=0.0, horizontal_flip_p=0.0):
         super().__init__(root, transform)
-        self.mix_up = mix_up
+        self.mix_up_p = mix_up_p
+        self.mix_up_alpha = mix_up_alpha
+        self.horizontal_flip_p = horizontal_flip_p
 
     def __getitem__(self, idx):
         image, label = super().__getitem__(idx)
         num_classes = len(self.classes)
 
+        # Flip Image horizontal for images where it's possible
+        if label not in [0, 1, 2, 3, 4, 5, 6, 7, 8, 14, 19, 20, 33, 34, 36, 37, 38, 39, 47, 48]:
+            flip = A.Compose([
+                A.HorizontalFlip(p=self.horizontal_flip_p),
+                ToTensorV2(),
+            ])
+            # Permute image dimensions because when converting to numpy, the image gets transposed (not what we want)
+            image = flip(image=image.permute(1, 2, 0).numpy())['image']
+
+        # Change label to one-hot vector
         label = torch.zeros(num_classes)
         label[self.targets[idx]] = 1
 
-        if self.mix_up:
-            p = random.random()
-            if p > 0.5:
-                mixup_idx = random.randint(0, self.__len__() - 1)
-                mixup_image, mixup_label = super().__getitem__(mixup_idx)
+        # Apply mixup
+        p = random.random()
+        if p < self.mix_up_p:
+            mixup_idx = random.randint(0, self.__len__() - 1)
+            mixup_image, mixup_label = super().__getitem__(mixup_idx)
 
-                mixup_label = torch.zeros(num_classes)
-                mixup_label[self.targets[mixup_idx]] = 1
+            mixup_label = torch.zeros(num_classes)
+            mixup_label[self.targets[mixup_idx]] = 1
 
-                # Select a random number from the given beta distribution
-                # Mixup the images accordingly
-                alpha = 0.3
-                lam = np.random.beta(alpha, alpha)
-                image = lam * image + (1 - lam) * mixup_image
-                label = lam * label + (1 - lam) * mixup_label
+            # Select a random number from the given beta distribution
+            # Mixup the images accordingly
+            lam = np.random.beta(self.mix_up_alpha, self.mix_up_alpha)
+            image = lam * image + (1 - lam) * mixup_image
+            label = lam * label + (1 - lam) * mixup_label
 
         return image, label
 
@@ -239,15 +262,24 @@ def get_datasets(root=ROOT_DIR):
     Returns the training and validation datasets along 
     with the class names.
     """
+    aug_config = {
+        'transform': (TrainTransforms()),
+        'mix_up_p': 0.66,
+        'mix_up_alpha': 0.1,
+        'horizontal_flip_p': 0.4,
+    }
+
     dataset = CustomImageFolderDataset(
         root=root,
-        transform=(TrainTransforms()),
-        mix_up=True
+        transform=aug_config['transform'],
+        mix_up_p=aug_config['mix_up_p'],
+        mix_up_alpha=aug_config['mix_up_alpha'],
+        horizontal_flip_p=aug_config['horizontal_flip_p']
+
     )
     dataset_test = CustomImageFolderDataset(
         root=root,
-        transform=(ValidTransforms()),
-        mix_up=False
+        transform=(ValidTransforms())
     )
     dataset_size = len(dataset)
 
@@ -259,7 +291,7 @@ def get_datasets(root=ROOT_DIR):
     dataset_train = Subset(dataset, indices[:-valid_size])
     dataset_valid = Subset(dataset_test, indices[-valid_size:])
 
-    return dataset_train, dataset_valid, dataset.classes
+    return dataset_train, dataset_valid, dataset.classes, aug_config
 
 
 def get_data_loaders(dataset_train, dataset_valid):
@@ -284,11 +316,13 @@ def get_data_loaders(dataset_train, dataset_valid):
 
 def visualize_transform():
     # Run for all the test images.
-    all_images = glob.glob(f'{ROOT_DIR}/00025/*.ppm')
+    all_images = glob.glob(f'{ROOT_DIR}/*/*.ppm')
+    random.shuffle(all_images)
 
     transform = A.Compose([
+        A.Resize(224, 224),
+        TrainTransforms.augments,
         A.Resize(RESIZE_TO, RESIZE_TO),
-        TrainTransforms.augments
     ])
 
     random.seed(42)

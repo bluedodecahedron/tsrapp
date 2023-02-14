@@ -22,7 +22,7 @@ ICONS_FOLDER = "resources/images/classes"
 TSD_MODEL = 'resources/gtsdb_best_ckpt.pth'
 TSR_MODEL = 'resources/model.pth'
 CLASS_NAMES = 'resources/signnames.csv'
-TSD_CONFIDENCE = 0.7
+TSD_CONFIDENCE = 0.75
 TSR_CONFIDENCE = 0.8
 TSR_MAX_WORKERS = 5
 
@@ -52,6 +52,7 @@ def build_tsr_predictor():
     predictor = tsr_inference.Predictor(
         model_path=TSR_MODEL,
         classes_path=CLASS_NAMES,
+        device='cuda',
         max_workers=TSR_MAX_WORKERS,
         confthre=TSR_CONFIDENCE
     )
@@ -109,7 +110,7 @@ def tsd_file(image_file):
 
 
 def tsr(images):
-    result_list = tsr_predictor.multi_inference(images)
+    result_list = tsr_predictor.multi_inference_gpu(images)
     return result_list
 
 
@@ -153,7 +154,9 @@ class VideoBuilder:
         self.frameCounter = 0
 
     def update(self, image):
-        self.add_frame(image.copy())
+        start_time = time.perf_counter()
+        self.add_frame(image)
+        logger.info(f"Video update time: {time.perf_counter()-start_time:.4f}s")
 
     def add_frame(self, frame):
         if self.frameCounter == self.video_max_frames:
@@ -218,7 +221,7 @@ class ActiveTrafficSigns:
                 self.remove(class_id)
         logger.info(f"Active classes: {self.__str__()}")
         result_image = self.visual(result_image)
-        logger.info(f"Overall update time: {time.perf_counter() - start_time:.4f}s")
+        logger.info(f"Active update time: {time.perf_counter() - start_time:.4f}s")
         return result_image
 
     def append(self, class_id):

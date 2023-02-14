@@ -16,27 +16,6 @@ torch.cuda.manual_seed(seed)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = True
 
-# Construct the argument parser.
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    '-e', '--epochs', type=int, default=10,
-    help='Number of epochs to train our network for'
-)
-parser.add_argument(
-    '-lr', '--learning-rate', type=float,
-    dest='learning_rate', default=0.001,
-    help='Learning rate for training the model'
-)
-parser.add_argument(
-    '-pw', '--pretrained', action='store_true', 
-    help='whether to use pretrained weihgts or not'
-)
-parser.add_argument(
-    '-ft', '--fine-tune', dest='fine_tune', action='store_true',
-    help='whether to train all layers or not'
-)
-args = vars(parser.parse_args())
-
 # Training function.
 def train(
     model, trainloader, optimizer, 
@@ -127,29 +106,14 @@ def validate(model, testloader, criterion, class_names):
     return epoch_loss, epoch_acc
 
 
-if __name__ == '__main__':
-    # Load the training and validation datasets.
-    dataset_train, dataset_valid, dataset_classes = get_datasets()
-    print(f"[INFO]: Number of training images: {len(dataset_train)}")
-    print(f"[INFO]: Number of validation images: {len(dataset_valid)}")
-    print(f"[INFO]: Class names: {dataset_classes}\n")
-    # Load the training and validation data loaders.
-    train_loader, valid_loader = get_data_loaders(dataset_train, dataset_valid)
-
-    # Learning_parameters. 
-    lr = args['learning_rate']
-    epochs = args['epochs']
-    device = ('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Computation device: {device}")
-    print(f"Learning rate: {lr}")
-    print(f"Epochs to train for: {epochs}\n")
-
+def train_hyper():
     # Load the model.
     model = build_model(
-        pretrained=args['pretrained'],
-        fine_tune=args['fine_tune']
+        pretrained=config['pretrained'],
+        fine_tune=config['fine_tune'],
+        dropout=config['dropout']
     ).to(device)
-    
+
     # Total parameters and trainable parameters.
     total_params = sum(p.numel() for p in model.parameters())
     print(f"{total_params:,} total parameters.")
@@ -158,32 +122,36 @@ if __name__ == '__main__':
     print(f"{total_trainable_params:,} training parameters.")
 
     # Optimizer.
-    optimizer = optim.Adam(model.parameters(), lr=lr, betas=(0.9, 0.999))
-    # optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=0.001)
-    # Loss function.
-    criterion = nn.CrossEntropyLoss()
-
-    restart_cycle = 15
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-        optimizer, 
-        T_0=restart_cycle,
-        T_mult=1,
-        eta_min=0
+    optimizer = optim.AdamW(
+        model.parameters(),
+        lr=config['learning_rate'],
+        betas=(config['beta1'], config['beta2']),
+        weight_decay=config['weight_decay']
     )
-    saver = Saver()
+    # optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
+
+    # Loss function.
+    criterion = nn.CrossEntropyLoss(label_smoothing=config['label_smoothing']).to(device)
+
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+        optimizer,
+        T_0=config['restart_cycle'],
+        T_mult=config['cycle_mult'],
+        eta_min=config['lr_min']
+    )
 
     # Lists to keep track of losses and accuracies.
     train_loss, valid_loss = [], []
     train_acc, valid_acc = [], []
     # Start the training.
-    for epoch in range(epochs):
-        print(f"[INFO]: Epoch {epoch+1} of {epochs}")
+    for epoch in range(config['epochs']):
+        print(f"[INFO]: Epoch {epoch+1} of {config['epochs']}")
         train_epoch_loss, train_epoch_acc = train(
-            model, train_loader, 
+            model, train_loader,
             optimizer, criterion,
             scheduler=scheduler, epoch=epoch
         )
-        valid_epoch_loss, valid_epoch_acc = validate(model, valid_loader,  
+        valid_epoch_loss, valid_epoch_acc = validate(model, valid_loader,
                                                     criterion, dataset_classes)
         train_loss.append(train_epoch_loss)
         valid_loss.append(valid_epoch_loss)
@@ -193,12 +161,50 @@ if __name__ == '__main__':
         print(f"Validation loss: {valid_epoch_loss:.3f}, validation acc: {valid_epoch_acc:.3f}")
         print('-'*50)
         time.sleep(5)
+        # Save final model
+        if epoch == config['epochs']-1:
+            saver.save_model(epoch, model, optimizer, criterion, final=True)
         # Save model every x epochs
-        if epoch % restart_cycle == 0 and not (epoch == epochs-1):
+        elif epoch == 0 or (epoch+1) % config['restart_cycle'] == 0:
             saver.save_model(epoch, model, optimizer, criterion)
-
-    # Save final model
-    saver.save_model(epochs, model, optimizer, criterion, final=True)
-    # Save the loss and accuracy plots.
-    saver.save_plots(train_acc, valid_acc, train_loss, valid_loss)
+        # Save the loss and accuracy plots.
+        saver.save_plots(train_acc, valid_acc, train_loss, valid_loss)
     print('TRAINING COMPLETE')
+
+
+if __name__ == '__main__':
+    # Load the training and validation datasets.
+    dataset_train, dataset_valid, dataset_classes, aug_config = get_datasets()
+    print(f"[INFO]: Number of training images: {len(dataset_train)}")
+    print(f"[INFO]: Number of validation images: {len(dataset_valid)}")
+    print(f"[INFO]: Class names: {dataset_classes}\n")
+    # Load the training and validation data loaders.
+    train_loader, valid_loader = get_data_loaders(dataset_train, dataset_valid)
+
+    device = ('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Computation device: {device}\n")
+
+    config = {
+        'pretrained': True,
+        'fine_tune': True,
+        'epochs': 100,
+        'learning_rate': 0.0001,
+        'beta1': 0.9,
+        'beta2': 0.999,
+        'weight_decay': 0.001,
+        'restart_cycle': 10,
+        'cycle_mult': 1,
+        'lr_min': 0.0,
+        'dropout': 0.4,
+        'label_smoothing': 0.05
+    }
+
+    print(f"Training with the following hyperparameters:")
+    for key, value in config.items():
+        print(f"{key}: {value}")
+
+    saver = Saver()
+    saver.save_parameters(config)
+    saver.save_augmentations(aug_config)
+
+    train_hyper()

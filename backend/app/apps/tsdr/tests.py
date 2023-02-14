@@ -38,8 +38,13 @@ class TsdrTestCase(TestCase):
         class_ids, img = services.tsdr(image)
         assert len(class_ids) == 3
 
-    def test_tsdr_detects_no_classes(self):
+    def test_tsdr_detects_no_classes_1(self):
         image = cv2.imread(f"{ROOT_FOLDER}/notrafficsigns.jpg")
+        class_ids, img = services.tsdr(image)
+        assert len(class_ids) == 0
+
+    def test_tsdr_detects_no_classes_2(self):
+        image = cv2.imread(f"{ROOT_FOLDER}/red.jpg")
         class_ids, img = services.tsdr(image)
         assert len(class_ids) == 0
 
@@ -47,21 +52,21 @@ class TsdrTestCase(TestCase):
         image = cv2.imread(f"{ROOT_FOLDER}/manytrafficsigns1.jpg")
         class_ids, img = services.tsdr(image)
         cv2.imshow("TSDR Result", img)
-        cv2.waitKey(1)
+        cv2.waitKey(0)
         cv2.destroyAllWindows()
 
     def test_tsdr_show_result_2(self):
         image = cv2.imread(f"{ROOT_FOLDER}/manytrafficsigns2.jpg")
         class_ids, img = services.tsdr(image)
         cv2.imshow("TSDR Result", img)
-        cv2.waitKey(1)
+        cv2.waitKey(0)
         cv2.destroyAllWindows()
 
     def test_tsdr_show_result_3(self):
         image = cv2.imread(f"{ROOT_FOLDER}/childrencrossing.jpg")
         class_ids, img = services.tsdr(image)
         cv2.imshow("TSDR Result", img)
-        cv2.waitKey(1)
+        cv2.waitKey(0)
         cv2.destroyAllWindows()
 
 
@@ -94,5 +99,5 @@ class TsdrStateTestCase(TestCase):
                 result_img = tsdr_state.update(image1)
         tsdr_state.release()
         cv2.imshow("Active Traffic Signs", result_img)
-        cv2.waitKey(1)
+        cv2.waitKey(0)
         cv2.destroyAllWindows()

@@ -71,7 +71,8 @@ class VideoTransformTrack(MediaStreamTrack):
     async def recv(self):
         frame = await self.track.recv()
         start_time = time.perf_counter()
-        img = frame.to_ndarray(format="bgr24").copy()
+        img = frame.to_ndarray(format="bgr24")
+        height, width, _ = img.shape
 
         # perform some sort of image processing
         if self.transform == "tsdr":
@@ -83,6 +84,7 @@ class VideoTransformTrack(MediaStreamTrack):
                 traceback.print_exc()
 
             # rebuild a VideoFrame, preserving timing information
+            img = cv2.resize(img, [width, height])
             new_frame = VideoFrame.from_ndarray(img, format="bgr24")
             new_frame.pts = frame.pts
             new_frame.time_base = frame.time_base
@@ -107,11 +109,12 @@ class VideoTransformTrack(MediaStreamTrack):
             # save frame
             # services.save_result(img)
             # print frame processing time
-            logger.info("Frame processing took: {:.4f}s".format(time.perf_counter() - start_time))
             # print pc stats
             sender = self.pc.getSenders()[0]
             stats = await sender.getStats()
             logger.info("Sender stats: \n" + str(stats))
+
+        logger.info("Frame processing took: {:.4f}s".format(time.perf_counter() - start_time))
 
         return new_frame
 

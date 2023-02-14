@@ -13,6 +13,7 @@ from torch import topk
 
 from tsrresnet.tools.model import build_model
 
+RESIZE_TO = 224
 # Define computation device.
 device = 'cuda'
 # Class names.
@@ -59,13 +60,15 @@ def apply_color_map(CAMs, width, height, orig_image):
     for i, cam in enumerate(CAMs):
         heatmap = cv2.applyColorMap(cv2.resize(cam,(width, height)), cv2.COLORMAP_JET)
         result = heatmap * 0.5 + orig_image * 0.5
-        result = cv2.resize(result, (224, 224))
+        result = cv2.resize(result, (RESIZE_TO, RESIZE_TO))
         return result
 
 
 def visualize_and_save_map(
     result, orig_image, gt_idx=None, class_idx=None, top_prob=0, save_name=None
 ):
+    orig_image = cv2.resize(orig_image, (256, 256))
+    result = cv2.resize(result, (256, 256))
     # Put class label text on the result.
     if class_idx is not None:
         cv2.putText(
@@ -87,7 +90,6 @@ def visualize_and_save_map(
             cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 0), 2,
             cv2.LINE_AA
         )
-    orig_image = cv2.resize(orig_image, (224, 224))
     img_concat = cv2.hconcat([
         np.array(result, dtype=np.uint8),
         np.array(orig_image, dtype=np.uint8)
@@ -104,16 +106,16 @@ features_blobs = []
 def hook_feature(module, input, output):
     features_blobs.append(output.data.cpu().numpy())
 # debug variable below to check module names
-# modules = model._modules
-model._modules.get('layer4').register_forward_hook(hook_feature)
-# model._modules.get('features').register_forward_hook(hook_feature)
+modules = model._modules
+# model._modules.get('layer4').register_forward_hook(hook_feature)
+model._modules.get('features').register_forward_hook(hook_feature)
 # Get the softmax weight.
 params = list(model.parameters())
 weight_softmax = np.squeeze(params[-2].data.cpu().numpy())
 
 # Define the transforms, resize => tensor => normalize.
 transform = A.Compose([
-    A.Resize(224, 224),
+    A.Resize(RESIZE_TO, RESIZE_TO),
     A.Normalize(
         mean=[0.485, 0.456, 0.406],
         std=[0.229, 0.224, 0.225]
@@ -137,10 +139,11 @@ class_correct = list(0. for i in range(len(class_names)))
 class_total = list(0. for i in range(len(class_names)))
 
 for i, image_path in enumerate(images):
-    if i > 100000:
+    if i > 1000:
         break
     # Read the image.
     image = cv2.imread(image_path)
+    image = cv2.resize(image, (RESIZE_TO, RESIZE_TO))
     orig_image = image.copy()
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     height, width, _ = orig_image.shape

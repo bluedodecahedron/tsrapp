@@ -55,7 +55,7 @@ class TsdrResult:
             txt_bk_color = (_COLORS[tsr_id] * 255 * 0.7).astype(np.uint8).tolist()
             alt_bk_color = (_COLORS[79] * 255 * 0.7).astype(np.uint8).tolist()
 
-            if tsr_prob > tsr_conf:
+            if tsr_id != len(tsr_names)-1:
                 cv2.rectangle(img, (x0, y0), (x1, y1), rec_color, 2)
                 cv2.rectangle(
                     img,

@@ -14,7 +14,7 @@ class InferResult:
         return Result(self.class_names, class_idx, top_prob, infer_time, confthre, q_index=q_index)
 
     def result_unknown(self, q_index=0):
-        return Result(self.class_names, len(self.class_names)-1, 0.0, 0.0, 0.0, q_index=q_index)
+        return Result(self.class_names, [len(self.class_names)-1], [0.0], 0.0, 0.0, q_index=q_index)
 
 
 class ResultList:
@@ -60,14 +60,30 @@ class ResultList:
 
 
 class Result:
-    def __init__(self, class_names, class_idx, top_prob, infer_time, confthre, q_index=0):
+    def __init__(self, class_names, classes_idx, top_probs, infer_time, confthre, q_index=0):
         self.cls_names = class_names
-        self.class_idx = class_idx
-        self.class_str = str(class_names[class_idx])
-        self.top_prob = top_prob
+        self.classes_idx = classes_idx
+        self.class_idx = classes_idx[0]
+        self.classes_str = [str(class_names[id]) for id in classes_idx]
+        self.class_str = str(class_names[classes_idx[0]])
+        self.top_probs = top_probs
+        self.top_prob = top_probs[0]
         self.infer_time = infer_time
         self.confthre = confthre
         self.q_index = q_index
 
+        # Set Unknown if prob below threshold
+        #if self.top_prob < self.confthre:
+            # set to number of classes (=last index)
+        #    self.class_idx = len(self.cls_names)-1
+        if self.top_probs[0] < 0.6 or self.top_probs[1] > 0.2:  # (1-confthre)/2
+            # set to number of classes (=last index)
+            self.class_idx = len(self.cls_names)-1
+            self.class_str = self.cls_names[self.class_idx]
+
     def __str__(self):
-        return f"{self.class_str} ({self.top_prob*100:.2f}%, {self.infer_time:.4f}s)"
+        str = "["
+        for i in range(len(self.classes_idx)):
+            str += f"{self.classes_str[i]} ({self.top_probs[i]*100:.2f}%), "
+        str += f"{self.infer_time:.4f}s]"
+        return str
