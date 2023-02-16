@@ -51,7 +51,7 @@ class Predictor:
     def preprocess(self, img):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         # downscale image
-        img = cv2.resize(img, (50, 50))
+        img = cv2.resize(img, (60, 60))
         img = cv2.resize(img, (224, 224))
         # use some augmentations that were used during training
         # size = 4
@@ -59,8 +59,8 @@ class Predictor:
         # img = cv2.erode(img, kernel, iterations=1)
         # img = cv2.GaussianBlur(img, (31, 31), 0)
         transform = A.Compose([
-            A.ColorJitter(brightness=(1.0, 1.0), contrast=(1.3, 1.3), saturation=(1.3, 1.3), hue=(0.0, 0.0), p=1.0),
-            A.Emboss(alpha=(0.4, 0.4), strength=(0.4, 0.4), p=1.0),
+            A.ColorJitter(brightness=(1.0, 1.0), contrast=(1.2, 1.2), saturation=(1.2, 1.2), hue=(0.0, 0.0), p=1.0),
+            # A.Emboss(alpha=(0.4, 0.4), strength=(0.4, 0.4), p=1.0),
         ])
         img = transform(image=img)['image']
         # cv2.imshow("title", img)
@@ -122,10 +122,8 @@ class Predictor:
         if len(images) == 0:
             return result_list
         for i, image in enumerate(images):
-            # Return with unknown result if image has a dimension=0
             if not all(image.shape):
-                result = self.infer_result.result_unknown(q_index=i)
-                result_list.append(result)
+                self.infer_result.result_unknown(q_index=i)
             tensor = self.preprocess(images[i])
             tensors.append(tensor.to(self.device))
         tensors = torch.stack(tensors).to(self.device)

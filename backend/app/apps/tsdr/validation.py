@@ -71,7 +71,7 @@ class TsdrGtsdbValidationTestCase(TestCase):
 
 
 class VideoTestCase(TestCase):
-    FRAME_DIM = 960
+    FRAME_DIM = 800
     vid_dir = 'resources/videos'
     vid1 = 'Zurich_back_highway_parking_street.mp4'
     vid2 = 'Zurich_sun.mp4'

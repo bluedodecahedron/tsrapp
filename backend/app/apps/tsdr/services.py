@@ -117,7 +117,7 @@ def tsr(images):
 def tsdr(image):
     start_time = time.perf_counter()
     tsd_result = tsd(image)
-    boxed_images = tsd_result.get_boxed_images()
+    boxed_images = tsd_result.boxed_images
     logger.info("Tsd took: {:.4f}s".format(time.perf_counter() - start_time))
     tsr_result_list = tsr(boxed_images)
 
@@ -195,7 +195,7 @@ class ActiveTrafficSigns:
     # Icon width in percent of input image
     ICON_SIZE_PRCT = 0.1
     # Do not count the last x classes in class_names as active
-    CLASSES_TO_IGNORE = 13
+    CLASSES_TO_IGNORE = 11
 
     def __init__(self, logfile_name, video_fps=VIDEO_FPS):
         self.count_dic = {}

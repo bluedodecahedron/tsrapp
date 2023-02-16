@@ -125,51 +125,53 @@ def dilate(img, **kwargs):
 # Training transforms.
 class TrainTransforms:
     augments = A.Compose([
-        A.Emboss(alpha=(0.4, 0.8), strength=(0.4, 0.8), p=0.20),
         A.Sharpen(lightness=(1.0, 1.0), p=0.3),
-        A.FancyPCA(alpha=0.1, p=0.3),
         # Random color changes
         A.ColorJitter(brightness=(0.8, 1.2), contrast=(0.8, 1.2), saturation=(0.8, 1.2), hue=(-0.05, 0.05), p=0.8),
         # Randomly thicken or thin shapes
         A.OneOf([
             A.Lambda(name='Dilate', image=dilate, p=0.5),
             A.Lambda(name='Erode', image=erode, p=0.5),
-        ], p=0.3),
-        A.ShiftScaleRotate(shift_limit=0.05, scale_limit=(0.2, 0.4), rotate_limit=5, p=0.9),
-        A.Sequential([
-            A.OneOf([
+        ], p=0.2),
+        A.OneOf([
+            A.Sequential([
+                A.ShiftScaleRotate(shift_limit=0.05, scale_limit=(0.2, 0.4), rotate_limit=10, p=0.9),
                 # Randomly distort image
                 A.GridDistortion(distort_limit=0.2, p=0.2),
-                # Perspective
-                A.Perspective(scale=(0.05, 0.05), p=0.1),
+            ], p=0.7),
+            # Perspective
+            A.Perspective(scale=(0.05, 0.10), p=0.3),
+        ], p=0.9),
+        A.OneOf([
+            A.GaussNoise(var_limit=(10, 40), p=0.2),
+            A.ImageCompression(quality_lower=20, quality_upper=50, p=0.2),
+        ], p=0.4),
+        # Random shadow
+        A.RandomShadow(shadow_roi=(0, 0, 1, 0.75), num_shadows_lower=1, num_shadows_upper=1, shadow_dimension=3, p=0.2),
+        # Operations that can reduce image quality
+        A.OneOf([
+            # Randomly replace rectangular image parts with noise
+            A.Lambda(name='RandomRemove', image=random_remove, p=0.2),
+            # Use downsampling, simulating far away traffic signs
+            A.Sequential([
+                A.RandomScale(scale_limit=(-0.90, -0.80), p=1.0),
+                A.ImageCompression(quality_lower=80, quality_upper=90, p=0.5),
+                A.Resize(RESIZE_TO, RESIZE_TO),
             ], p=0.3),
-            # Random shadow
-            A.RandomShadow(shadow_roi=(0, 0, 1, 0.75), num_shadows_lower=1, num_shadows_upper=1, shadow_dimension=3, p=0.3),
-            # Operations that can reduce image quality
-            A.OneOf([
-                # Randomly replace rectangular image parts with noise
-                A.Lambda(name='RandomRemove', image=random_remove, p=0.35),
-                # Use downsampling, simulating far away traffic signs
-                A.Sequential([
-                    A.RandomScale(scale_limit=(-0.90, -0.80), p=1.0),
-                    A.ImageCompression(quality_lower=80, quality_upper=90, p=0.5),
-                    A.Resize(RESIZE_TO, RESIZE_TO),
-                ], p=0.20),
-                # Simulate fog
-                A.RandomFog(p=0.1),
-                # Simulate rain
-                A.RandomRain(brightness_coefficient=1.0, p=0.3),
-                # Add a yellow sun flare
-                A.RandomSunFlare(flare_roi=(0.0, 0.0, 1, 1), angle_lower=0.5,
-                                 num_flare_circles_lower=3, num_flare_circles_upper=6, src_radius=70,
-                                 src_color=(204, 255, 255), p=0.05),
-                # Add a red sun flare
-                A.RandomSunFlare(flare_roi=(0.0, 0.0, 1, 1), angle_lower=0.5,
-                                 num_flare_circles_lower=3, num_flare_circles_upper=6, src_radius=70,
-                                 src_color=(204, 204, 255), p=0.05),
-            ], p=1.0),
-        ], p=0.8)
-    ], p=0.95)
+            # Simulate fog
+            A.RandomFog(p=0.1),
+            # Simulate rain
+            A.RandomRain(brightness_coefficient=1.0, p=0.1),
+            # Add a yellow sun flare
+            A.RandomSunFlare(flare_roi=(0.0, 0.0, 1, 1), angle_lower=0.5,
+                             num_flare_circles_lower=3, num_flare_circles_upper=6, src_radius=100,
+                             src_color=(204, 255, 255), p=0.1),
+            # Add a red sun flare
+            A.RandomSunFlare(flare_roi=(0.0, 0.0, 1, 1), angle_lower=0.5,
+                             num_flare_circles_lower=3, num_flare_circles_upper=6, src_radius=100,
+                             src_color=(204, 204, 255), p=0.1),
+        ], p=0.7),
+    ], p=0.90)
 
     def __init__(self):
         self.transforms = A.Compose([
@@ -183,7 +185,6 @@ class TrainTransforms:
                 ),
             ToTensorV2()
         ])
-        bla=0
     
     def __call__(self, img):
         return self.transforms(image=np.array(img))['image']
@@ -225,13 +226,28 @@ class CustomImageFolderDataset(datasets.ImageFolder):
         num_classes = len(self.classes)
 
         # Flip Image horizontal for images where it's possible
-        if label not in [0, 1, 2, 3, 4, 5, 6, 7, 8, 14, 19, 20, 33, 34, 36, 37, 38, 39, 47, 48]:
+        if label not in [0, 1, 2, 3, 4, 5, 6, 7, 8, 14, 19, 20, 33, 34, 36, 37, 38, 39, 43, 44, 46, 47]:
             flip = A.Compose([
                 A.HorizontalFlip(p=self.horizontal_flip_p),
                 ToTensorV2(),
             ])
             # Permute image dimensions because when converting to numpy, the image gets transposed (not what we want)
             image = flip(image=image.permute(1, 2, 0).numpy())['image']
+
+        if label == 57:
+            downscale = A.Compose([
+                    A.OneOf([
+                        A.Resize(5, 5),
+                        A.Resize(10, 10),
+                        A.Resize(20, 20),
+                        A.Resize(30, 30),
+                        A.Resize(50, 50),
+                        A.Resize(70, 70),
+                    ], p=1.0),
+                    A.Resize(RESIZE_TO, RESIZE_TO),
+                    ToTensorV2(),
+                ])
+            image = downscale(image=image.permute(1, 2, 0).numpy())['image']
 
         # Change label to one-hot vector
         label = torch.zeros(num_classes)
@@ -264,7 +280,7 @@ def get_datasets(root=ROOT_DIR):
     """
     aug_config = {
         'transform': (TrainTransforms()),
-        'mix_up_p': 0.66,
+        'mix_up_p': 0.0,
         'mix_up_alpha': 0.1,
         'horizontal_flip_p': 0.4,
     }
@@ -317,6 +333,8 @@ def get_data_loaders(dataset_train, dataset_valid):
 def visualize_transform():
     # Run for all the test images.
     all_images = glob.glob(f'{ROOT_DIR}/*/*.ppm')
+    all_images += glob.glob(f'{ROOT_DIR}/*/*.jpg')
+    all_images += glob.glob(f'{ROOT_DIR}/*/*.png')
     random.shuffle(all_images)
 
     transform = A.Compose([

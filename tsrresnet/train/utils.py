@@ -54,7 +54,7 @@ class Saver:
         )
         plt.plot(
             valid_acc, color='blue', linestyle='-',
-            label='validataion accuracy'
+            label='validation accuracy'
         )
         plt.xlabel('Epochs')
         plt.ylabel('Accuracy')
@@ -69,10 +69,10 @@ class Saver:
         )
         plt.plot(
             valid_loss, color='red', linestyle='-',
-            label='validataion loss'
+            label='validation loss'
         )
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
         plt.legend()
         plt.savefig(f"{self.base_folder}/loss.png")
-        plt.close()
+        plt.close('all')

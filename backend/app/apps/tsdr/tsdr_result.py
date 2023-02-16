@@ -1,9 +1,11 @@
 import cv2
 import numpy as np
+import yolox.tools.infer_result as TSDResult
+from tsrresnet.tools.infer_result import ResultList as TSRResultList
 
 
 class TsdrResult:
-    def __init__(self, tsd_result, tsr_result_list):
+    def __init__(self, tsd_result: TSDResult, tsr_result_list: TSRResultList):
         self.tsd_result = tsd_result
         self.tsr_result_list = tsr_result_list
 
@@ -11,9 +13,10 @@ class TsdrResult:
         if self.tsd_result.output is None:
             return self.tsd_result.img_copy()
 
-        tsd_box_borders = self.tsd_result.get_box_borders()
+        tsd_box_borders = self.tsd_result.box_borders
         img = self.tsd_result.img_copy()
-        tsd_ids, tsd_probs = self.tsd_result.get_scores()
+        tsd_ids = self.tsd_result.classes
+        tsd_probs = self.tsd_result.scores
         tsd_conf = self.tsd_result.confthre
         tsd_names = self.tsd_result.cls_names
         tsr_ids = self.tsr_result_list.get_class_ids()

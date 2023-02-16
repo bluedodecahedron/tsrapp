@@ -191,11 +191,11 @@ if __name__ == '__main__':
         'learning_rate': 0.0001,
         'beta1': 0.9,
         'beta2': 0.999,
-        'weight_decay': 0.001,
+        'weight_decay': 0.00025,
         'restart_cycle': 10,
         'cycle_mult': 1,
         'lr_min': 0.0,
-        'dropout': 0.4,
+        'dropout': 0.2,
         'label_smoothing': 0.05
     }
 

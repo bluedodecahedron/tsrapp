@@ -14,7 +14,7 @@ class TsdTestCase(TestCase):
     def test_tsd_detects_many_classes1(self):
         image = cv2.imread(f"{ROOT_FOLDER}/manytrafficsigns1.jpg")
         tsd_result = services.tsd(image)
-        assert len(tsd_result.get_boxed_images()) == 9
+        assert len(tsd_result.boxed_images) == 9
 
 
 class TsdrTestCase(TestCase):
@@ -75,7 +75,7 @@ class ActiveTrafficSignsTestCase(TestCase):
         # image = cv2.imread(f"{ROOT_FOLDER}/childrencrossing.jpg")
         image1 = cv2.imread(f"{ROOT_FOLDER}/manytrafficsigns1.jpg")
         image2 = cv2.imread(f"{ROOT_FOLDER}/notrafficsigns.jpg")
-        active_traffic_signs = ActiveTrafficSigns()
+        active_traffic_signs = ActiveTrafficSigns('ActiveTrafficSignsTestCase')
         for i in range(10):
             if i % 5 == 0 or i % 6 == 0:
                 result_img = active_traffic_signs.update(image2)

@@ -14,7 +14,7 @@ class InferResult:
         return Result(self.class_names, class_idx, top_prob, infer_time, confthre, q_index=q_index)
 
     def result_unknown(self, q_index=0):
-        return Result(self.class_names, [len(self.class_names)-1], [0.0], 0.0, 0.0, q_index=q_index)
+        return Result(self.class_names, [len(self.class_names)-1], [0.0, 0.0], 0.0, 0.0, q_index=q_index)
 
 
 class ResultList:
@@ -76,7 +76,7 @@ class Result:
         #if self.top_prob < self.confthre:
             # set to number of classes (=last index)
         #    self.class_idx = len(self.cls_names)-1
-        if self.top_probs[0] < 0.6 or self.top_probs[1] > 0.2:  # (1-confthre)/2
+        if self.top_probs[0] < 0.90 or self.top_probs[1] > 0.05:  # (1-confthre)/2
             # set to number of classes (=last index)
             self.class_idx = len(self.cls_names)-1
             self.class_str = self.cls_names[self.class_idx]

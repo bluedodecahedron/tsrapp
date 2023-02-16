@@ -102,8 +102,9 @@ class TesTAugmentations(TestCase):
                     image = images[j].numpy().transpose(1, 2, 0)
                     image = transform(image=image)['image']
                     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                    cv2.imshow('MixUp Image', image)
-                    cv2.waitKey(0)
+                    if labels[j][57] == 1.0:
+                        cv2.imshow('Image', image)
+                        cv2.waitKey(0)
                     continue
         cv2.destroyAllWindows()
 
@@ -133,7 +134,7 @@ class TestModel(TestCase):
 
     def test_params_max_min(self):
         max_value = float('-inf')
-        min_value = float('inf')
+        min_value = float('  inf')
         for param in self.predictor.model.parameters():
             if torch.max(param) > max_value:
                 max_value = torch.max(param)
