@@ -1,9 +1,11 @@
 import cv2
 import numpy as np
+import yolox.tools.infer_result as TSDResult
+from tsrresnet.tools.infer_result import ResultList as TSRResultList
 
 
 class TsdrResult:
-    def __init__(self, tsd_result, tsr_result_list):
+    def __init__(self, tsd_result: TSDResult, tsr_result_list: TSRResultList):
         self.tsd_result = tsd_result
         self.tsr_result_list = tsr_result_list
 
@@ -11,9 +13,10 @@ class TsdrResult:
         if self.tsd_result.output is None:
             return self.tsd_result.img_copy()
 
-        tsd_box_borders = self.tsd_result.get_box_borders()
+        tsd_box_borders = self.tsd_result.box_borders
         img = self.tsd_result.img_copy()
-        tsd_ids, tsd_probs = self.tsd_result.get_scores()
+        tsd_ids = self.tsd_result.classes
+        tsd_probs = self.tsd_result.scores
         tsd_conf = self.tsd_result.confthre
         tsd_names = self.tsd_result.cls_names
         tsr_ids = self.tsr_result_list.get_class_ids()
@@ -29,7 +32,7 @@ class TsdrResult:
             box = tsd_box_borders[i]
             tsd_prob = tsd_probs[i]
             tsd_id = int(tsd_ids[i])
-            tsr_id = int(tsr_ids[i])
+            tsr_id = tsr_ids[i]
             tsr_prob = tsr_probs[i]
             if tsd_prob < tsd_conf:
                 continue
@@ -42,7 +45,7 @@ class TsdrResult:
             alt_rec_color =  (_COLORS[79] * 255).astype(np.uint8).tolist()
             tsd_text = '{}: {:.1f}%'.format(tsd_names[tsd_id], tsd_prob * 100)
             tsr_text = '{}: {:.1f}%'.format(tsr_names[tsr_id], tsr_prob * 100)
-            alt_text = 'unknown sign'
+            alt_text = 'Unknown'
             txt_color = (0, 0, 0) if np.mean(_COLORS[tsr_id]) > 0.5 else (255, 255, 255)
             alt_color = (0, 0, 0) if np.mean(_COLORS[79]) > 0.5 else (255, 255, 255)
             font = cv2.FONT_HERSHEY_SIMPLEX
@@ -55,7 +58,7 @@ class TsdrResult:
             txt_bk_color = (_COLORS[tsr_id] * 255 * 0.7).astype(np.uint8).tolist()
             alt_bk_color = (_COLORS[79] * 255 * 0.7).astype(np.uint8).tolist()
 
-            if tsr_prob > tsr_conf:
+            if tsr_id != len(tsr_names)-1:
                 cv2.rectangle(img, (x0, y0), (x1, y1), rec_color, 2)
                 cv2.rectangle(
                     img,

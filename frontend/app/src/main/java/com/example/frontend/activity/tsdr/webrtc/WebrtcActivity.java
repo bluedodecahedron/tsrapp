@@ -1,6 +1,7 @@
 package com.example.frontend.activity.tsdr.webrtc;
 
 import android.Manifest;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -11,22 +12,26 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
 
 import com.example.frontend.R;
+import com.example.frontend.activity.tsdr.webrtc.encoder.CustomHardwareVideoEncoderFactory;
 import com.example.frontend.activity.tsdr.webrtc.observers.CustomCapturerObserver;
 import com.example.frontend.activity.tsdr.webrtc.observers.CustomPeerConnectionObserver;
 import com.example.frontend.activity.tsdr.webrtc.observers.CustomSdpObserver;
 import com.example.frontend.activity.tsdr.webrtc.video.StatisticsRenderer;
+import com.example.frontend.activity.tsdr.webrtc.video.SurfaceRenderer;
 import com.example.frontend.activity.tsdr.webrtc.video.VideoCapturerFactory;
 import com.example.frontend.databinding.ActivityWebrtcBinding;
 import com.example.frontend.schema.Offer;
 import com.example.frontend.service.OfferService;
+import com.google.android.material.button.MaterialButton;
 
 import org.webrtc.DefaultVideoDecoderFactory;
-import org.webrtc.DefaultVideoEncoderFactory;
 import org.webrtc.EglBase;
+import org.webrtc.HardwareVideoDecoderFactory;
 import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.RendererCommon;
+import org.webrtc.RtpTransceiver;
 import org.webrtc.SessionDescription;
 import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.VideoCapturer;
@@ -35,11 +40,9 @@ import org.webrtc.VideoEncoderFactory;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Timer;
-import java.util.TimerTask;
 
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
@@ -52,6 +55,12 @@ public class WebrtcActivity extends AppCompatActivity {
     public static final int VIDEO_RESOLUTION_WIDTH = 800; // Video capturer chooses the next closest supported resolution for the device
     public static final int VIDEO_RESOLUTION_HEIGHT = 500;
     public static final int FPS = 15; // Video capturer chooses the next closest supported fps value for the device
+    public static final int MIN_BITRATE = 1000000;
+    public static final int DEFAULT_BITRATE = 3000000;
+    public static final int MAX_BITRATE = 5000000;
+    public static final boolean ENABLE_INTEL_VP8_ENCODER = false;
+    public static final boolean ENABLE_H264_HIGH_PROFILE = false;
+
 
     private ActivityWebrtcBinding binding;
     private PeerConnection localPeerConnection;
@@ -67,9 +76,16 @@ public class WebrtcActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_webrtc);
-        setSupportActionBar(binding.toolbar);
+
+        binding.stopbtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                stop();
+            }
+        });
 
         start();
+        binding.surfaceRenderer.setVisibility(View.VISIBLE);
     }
 
     @Override
@@ -119,8 +135,8 @@ public class WebrtcActivity extends AppCompatActivity {
         final VideoEncoderFactory encoderFactory;
         final VideoDecoderFactory decoderFactory;
 
-        encoderFactory = new DefaultVideoEncoderFactory(rootEglBase.getEglBaseContext(), false /* enableIntelVp8Encoder */, true);
-        decoderFactory = new DefaultVideoDecoderFactory(rootEglBase.getEglBaseContext());
+        encoderFactory = new CustomHardwareVideoEncoderFactory(rootEglBase.getEglBaseContext(), ENABLE_INTEL_VP8_ENCODER, ENABLE_H264_HIGH_PROFILE);
+        decoderFactory = new HardwareVideoDecoderFactory(rootEglBase.getEglBaseContext());
 
         PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(this)
                 .setEnableInternalTracer(true)
@@ -152,7 +168,8 @@ public class WebrtcActivity extends AppCompatActivity {
 
     private void initializePeerConnection() {
         localPeerConnection = createPeerConnection(factory);
-        localPeerConnection.setBitrate(500000,2000000,4000000);
+        RtpTransceiver.RtpTransceiverInit transceiverInit = new RtpTransceiver.RtpTransceiverInit();
+        localPeerConnection.setBitrate(MIN_BITRATE,DEFAULT_BITRATE,MAX_BITRATE);
         statsRenderer = new StatisticsRenderer(this, binding, localPeerConnection, TAG);
         binding.surfaceRenderer.setStatsRenderer(statsRenderer);
     }
@@ -168,8 +185,14 @@ public class WebrtcActivity extends AppCompatActivity {
         iceServers.add(new PeerConnection.IceServer(URL));
 
         PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServers);
+        rtcConfig.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_ONCE;
+        rtcConfig.bundlePolicy = PeerConnection.BundlePolicy.MAXCOMPAT;
+        rtcConfig.candidateNetworkPolicy = PeerConnection.CandidateNetworkPolicy.LOW_COST;
+        //rtcConfig.enableCpuOveruseDetection = false;
+        //rtcConfig.enableDscp = true;
+        //rtcConfig.presumeWritableWhenFullyRelayed = true;
+        //rtcConfig.allowCodecSwitching = true;
         //rtcConfig.allowCodecSwitching = false;
-        //rtcConfig.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
         //rtcConfig.keyType = PeerConnection.KeyType.ECDSA;
         //rtcConfig.suspendBelowMinBitrate = false;
         //rtcConfig.networkPreference = PeerConnection.AdapterType.WIFI;
@@ -248,7 +271,6 @@ public class WebrtcActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         Log.i(TAG, "Destroying WebRTC Activity");
         closeConnection();
         //message.put("userId", RTCSignalClient.getInstance().getUserId());
@@ -258,6 +280,7 @@ public class WebrtcActivity extends AppCompatActivity {
         surfaceTextureHelper.dispose();
         PeerConnectionFactory.stopInternalTracingCapture();
         PeerConnectionFactory.shutdownInternalTracer();
+        super.onDestroy();
     }
 
     private void closeConnection() {
@@ -284,5 +307,11 @@ public class WebrtcActivity extends AppCompatActivity {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    private void stop() {
+        Intent intent = new Intent(this, StoppedActivity.class);
+        startActivity(intent);
+        finish();
     }
 }

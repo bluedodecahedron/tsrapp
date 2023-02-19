@@ -34,6 +34,7 @@ android {
         //allows using Java 8 libs for Android API < 26
         coreLibraryDesugaringEnabled true
     }
+    namespace 'com.example.frontend'
 }
 
 dependencies {

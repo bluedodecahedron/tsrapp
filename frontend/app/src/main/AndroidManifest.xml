@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.frontend">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-feature android:name="android.hardware.camera.any" />
 
@@ -18,6 +17,7 @@
         android:theme="@style/Theme.Frontend"
         android:usesCleartextTraffic="true">
 
+        <activity android:name=".activity.tsdr.webrtc.StoppedActivity" />
         <activity android:name=".activity.tsdr.webrtc.WebrtcActivity" />
         <activity android:name=".activity.tsdr.http.HttpActivity" />
         <activity android:name=".activity.MainActivity"

@@ -1,6 +1,7 @@
 storage/backend.log
 storage/db.sqlite3
 storage/tsd
+storage/videos
 
 .idea/
 admindata
@@ -15,6 +16,7 @@ app/apps/*/__pycache__/
 backend/public_hosts.txt
 resources/gtsdb_best_ckpt.pth
 resources/model.pth
+resources/videos
 
 gtsdb_best_ckpt_old.pth
 app/apps/bla
