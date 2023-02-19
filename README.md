@@ -8,9 +8,9 @@ Some key information about the project:
 
 * The backend is given as a django project. It receives a video stream from the frontend in real time to recognize traffic signs.
 * The frontend is given as an android app. It receives a video stream from the backend containing recognized traffic signs in real time.
-* The object detection algorithm used in this project is the pytorch implementation of yoloX. 
-* The object recognition algorithm used in this project is resnet, also implemented with pytorch. 
-* The Video streaming technology used in this project is WebRTC.
+* The object detection model used in this project is the pytorch implementation of yoloX. 
+* The object recognition model used in this project is EfficientNet, also implemented with pytorch. 
+* The video streaming technology used in this project is WebRTC.
 
 # Installation
 
