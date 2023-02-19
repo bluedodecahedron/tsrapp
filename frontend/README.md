@@ -5,6 +5,8 @@ This project represents the frontend for the TSDR app. It allows using a camera 
 All devices running android version 5.0 (API level 21) to version 12.0 (API level 31) are supported. 
 
 ![](loginscreen.jpg)
+![](startscreen.jpg)
+![](tsdrscreen.jpg)
 
 ## Installation
 

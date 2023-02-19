@@ -332,9 +332,9 @@ def get_data_loaders(dataset_train, dataset_valid):
 
 def visualize_transform():
     # Run for all the test images.
-    all_images = glob.glob(f'{ROOT_DIR}/*/*.ppm')
-    all_images += glob.glob(f'{ROOT_DIR}/*/*.jpg')
-    all_images += glob.glob(f'{ROOT_DIR}/*/*.png')
+    all_images = glob.glob(f'{ROOT_DIR}/00015/*.ppm')
+    all_images += glob.glob(f'{ROOT_DIR}/00015/*.jpg')
+    all_images += glob.glob(f'{ROOT_DIR}/00015/*.png')
     random.shuffle(all_images)
 
     transform = A.Compose([

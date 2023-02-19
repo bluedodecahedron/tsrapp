@@ -1,16 +1,17 @@
-# TSDR App
+# TSDRapp
 
 Android App for detecting and classifying traffic signs as part of my Bachelor's thesis in Software and Information Engineering at TU Wien.
 
-![](example.jpg)
+![](activetrafficsigns.jpg)
 
 Some key information about the project:
 
+* TSDRapp can detect and recognize the 48 most common signs in the Vienna convention of road signs and signals. 
 * The backend is given as a django project. It receives a video stream from the frontend in real time to recognize traffic signs.
 * The frontend is given as an android app. It receives a video stream from the backend containing recognized traffic signs in real time.
-* The object detection algorithm used in this project is the pytorch implementation of yoloX. 
-* The object recognition algorithm used in this project is resnet, also implemented with pytorch. 
-* The Video streaming technology used in this project is WebRTC.
+* The object detection model used in this project is the pytorch implementation of yoloX. 
+* The object recognition model used in this project is EfficientNet, also implemented with pytorch. 
+* The video streaming technology used in this project is WebRTC.
 
 # Installation
 
