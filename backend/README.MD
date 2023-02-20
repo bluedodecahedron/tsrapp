@@ -64,11 +64,27 @@ In most cases, this should not be necessary. If exchanging ice candidates fails 
 
 ```UDP ports 49152-65535```
 
+### 8. Set Nvidia Clocks
+
+For some Nivida GPUs, the (memory) clocks are not stable during model inference and will change if the GPU is not fully used. This can lead to varying inference speed, which is bad for performance of the server. To avoid this behavior, set the clocks manually with the following commands
+
+`nvidia-smi -lgc 1770,1770` (GPU clocks)
+
+`nvidia-smi -lmc 5001,5001` (memory clocks)
+
+The needed (and available) clock values may vary depending on the GPU in use. 
+For reference, on a RTX 3070, frame processing took 0.02 to 0.05 seconds.
+If it takes any longer than 0.06 seconds, the application will not work correctly since this increases latency for each processed frame.
+
 ### 8. Start the backend server
 
 This command will start the backend server. Make sure you are in the base folder of the project.
 
 `python -m uvicorn backend.asgi:application --host 0.0.0.0 --port [port] --reload`
+
+### 9. Connect with android device
+
+Check frontend project for instructions on how to connect to the backend server. For each ended connection, a video is saved in the folder `backend/storage/videos`.
 
 ## Optional
 
