@@ -12,8 +12,8 @@ from app.apps.tsdr.tsdr_result import TsdrResult
 import yolox.tools.demo as tsd_demo
 from yolox.tools.infer_result import InferResult as TsdResult
 import yolox.exp.example.custom.yolox_s_gtsdb as gtsdb
-import tsrresnet.tools.inference as tsr_inference
-from tsrresnet.tools.infer_result import InferResult as TsrResult
+import tsrmodel.tools.inference as tsr_inference
+from tsrmodel.tools.infer_result import InferResult as TsrResult
 
 
 logger = logging.getLogger('backend')
@@ -48,7 +48,7 @@ def build_tsd_predictor():
 
 
 def build_tsr_predictor():
-    logger.info('Initializing resnet pytorch model for traffic sign classification')
+    logger.info('Initializing efficientnet pytorch model for traffic sign classification')
     predictor = tsr_inference.Predictor(
         model_path=TSR_MODEL,
         classes_path=CLASS_NAMES,

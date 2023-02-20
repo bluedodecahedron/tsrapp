@@ -3,9 +3,9 @@ input/GTSRB_Final_Test_Images/GTSRB
 input/GTSRB_Final_Training_Images/GTSRB
 input/GTSRB_Final_Test_Images.zip
 input/GTSRB_Final_Training_Images.zip
-tsrresnet.egg-info
+tsrmodel.egg-info
 outputs/*
 .eggs
-tsrresnet/tools/__pycache__
-tsrresnet/__pychache__
+tsrmodel/tools/__pycache__
+tsrmodel/__pychache__
 train/__pycache__
