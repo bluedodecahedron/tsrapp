@@ -45,8 +45,6 @@ pip3 install -v -e .  # or  python3 setup.py develop
 
 A customized fork of the original yoloX github project is included in this project as a submodule.
 
-Keep in mind that this project uses different 
-
 ## 4. Install tsrresnet
 
 Navigate into the tsrresnet folder and run the following command. Make sure you have activated the conda environment from step 2.
@@ -55,10 +53,10 @@ Navigate into the tsrresnet folder and run the following command. Make sure you 
 pip3 install -v -e .  # or  python3 setup.py develop
 ```
 
-The basic outline of the traffic sign recognition implementation is taken from 
+The basic architecture of the traffic sign recognition implementation is taken from 
 [here](https://debuggercafe.com/traffic-sign-recognition-using-pytorch-and-deep-learning/).
 
-However, the implementation in the above link uses mobilenet, while this project uses resnet since resnet is more optimized for GPUs.
+However, the implementation in the above link uses Mobilenet, while this project uses EfficientNet since resnet is better optimized for real time classification.
 The traffic sign images also needed additional augmentations since real world performance was not good enough without them.
 Model inference also needed to be changed in order for it to work with this project.
 
