@@ -15,8 +15,8 @@ The following major technologies are used:
 * uvicorn: Provides asynchronous event and request handling. This is needed for WebRTC to work.
 * aiortc: Provides a WebRTC implementation for python. This is needed for video streaming to work between backend and frontend.
 * yolox: Provides a model and algorithm for traffic sign detection.
-* resnet: Provides a model for traffic sign recognition.
-* pytorch: Provides a machine learning framework for yolox and resnet.
+* efficientnet: Provides a model for traffic sign recognition.
+* pytorch: Provides a machine learning framework for yolox and efficientnet.
 
 ### 2. Download server resources
 
