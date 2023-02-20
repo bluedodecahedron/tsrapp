@@ -8,4 +8,5 @@ outputs/*
 .eggs
 tsrmodel/tools/__pycache__
 tsrmodel/__pychache__
+tsrmodel/tsrmodel/__pychache__
 train/__pycache__
