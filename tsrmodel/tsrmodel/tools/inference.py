@@ -10,8 +10,8 @@ from albumentations.pytorch import ToTensorV2
 from torch.nn import functional as F
 from torch import topk
 
-from tsrresnet.tools.model import build_model
-from tsrresnet.tools.infer_result import InferResult
+from tsrmodel.tools.model import build_model
+from tsrmodel.tools.infer_result import InferResult
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 

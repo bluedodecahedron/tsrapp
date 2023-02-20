@@ -11,7 +11,7 @@ from albumentations.pytorch import ToTensorV2
 from torch.nn import functional as F
 from torch import topk
 
-from tsrresnet.tools.model import build_model
+from tsrmodel.tools.model import build_model
 
 RESIZE_TO = 224
 # Define computation device.

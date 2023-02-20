@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import yolox.tools.infer_result as TSDResult
-from tsrresnet.tools.infer_result import ResultList as TSRResultList
+from tsrmodel.tools.infer_result import ResultList as TSRResultList
 
 
 class TsdrResult:

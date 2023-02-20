@@ -6,7 +6,7 @@ import time
 
 from tqdm.auto import tqdm
 
-from tsrresnet.tools.model import build_model
+from tsrmodel.tools.model import build_model
 from datasets import get_datasets, get_data_loaders
 from utils import Saver
 

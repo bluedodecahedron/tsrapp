@@ -9,11 +9,11 @@ def get_install_requirements():
 
 
 setuptools.setup(
-    name="tsrresnet",
+    name="tsrmodel",
     version="1.0.0",
     author="Richard Binder",
-    packages=["tsrresnet.tools"],
-    package_dir={"tsrresnet.tools": "tsrresnet/tools"},
+    packages=["tsrmodel.tools"],
+    package_dir={"tsrmodel.tools": "tsrmodel/tools"},
     python_requires=">=3.8",
     install_requires=get_install_requirements(),
     setup_requires=["wheel"],  # avoid building error when pip is not updated
