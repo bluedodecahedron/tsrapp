@@ -17,7 +17,9 @@ Some key information about the project:
 
 ## 1. Clone repository
 
-Clone this project to your local machine (Windows or Linux). On Windows, keep the following in mind:
+Clone this project to your local machine (Windows or Linux). 
+
+On Windows, keep the following in mind:
 * CMake and Visual Studio Build Tools (2022) need to be installed.
 * Installation commands below need to be run from within the Visual Studio developer console. 
 
@@ -28,6 +30,7 @@ anaconda environment and install all dependencies like so:
 
 ```conda env create -f conda_env.yml -n tsdr```
 
+On Linux, some python dependencies may need to be changed. `pycocotools` is one of them.
 Installation can take a considerable amount of time. When it's done, activate the environment with
 
 ```conda activate tsdr```
