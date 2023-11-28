@@ -21,16 +21,13 @@ The following major technologies are used:
 ### 2. Download server resources
 
 The backend uses PyTorch models to do TSDR. They are too large for the git repository, but are available at:
-https://drive.google.com/file/d/18sMf4xfe4xuGgkK416ua1UyS2bdPjP76/view?usp=sharing
-
+https://drive.google.com/file/d/18sMf4xfe4xuGgkK416ua1UyS2bdPjP76/view?usp=sharing.
 The files need to be added to the folder `backend/resources`. The application will not work without them.
 
 ### 3. Execute tests
 
 Make sure that TSDR inference works by executing all tests in the file `backend/app/apps/tsdr/tests.py`.
 Some cv2 figures might pop up, which can be closed by pressing any key.
-
-The file `backend/app/apps/tsdr/validation.py` can be used to perform TSDR validation on a test set and multiple videos. Keep in mind that processing the videos takes quite long (2 or 3 hours).
 
 ### 4. Build database
 
@@ -115,9 +112,10 @@ Keep in mind that media permissions need to be enabled in the browser settings f
 
 ### 3. Validation
 
-If you want to run the validation tests in the backend, you will need additional images and videos (7GB):
-[missing]
-
+The file `backend/app/apps/tsdr/validation.py` can be used to perform TSDR validation on a test set and multiple videos. 
+Keep in mind that processing the videos takes quite long (2 or 3 hours).
+The validation tests require additional images and videos (7GB):
+https://drive.google.com/file/d/1GSxG4dsMXN39aV817rjNAtaIbrnaKx4n/view?usp=sharing
 Add them to `backend/resources`. The validation files are NOT necessary for the application to work.
 
 ### API Doc
