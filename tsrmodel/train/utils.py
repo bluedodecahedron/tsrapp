@@ -3,18 +3,17 @@ import os
 import torch
 import matplotlib
 import matplotlib.pyplot as plt
+import csv
 from datetime import datetime
 
 matplotlib.style.use('ggplot')
 matplotlib.use('TkAgg')
 
-BASE_FOLDER = '../outputs/models'
-
 
 class Saver:
-    def __init__(self):
+    def __init__(self, base_folder):
         time_now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")[:-3]
-        self.base_folder = f'{BASE_FOLDER}/{time_now}'
+        self.base_folder = f'{base_folder}/{time_now}'
         os.makedirs(self.base_folder)
 
     def save_parameters(self, config):
@@ -41,6 +40,16 @@ class Saver:
                     'optimizer_state_dict': optimizer.state_dict(),
                     'loss': criterion,
                     }, f"{folder}/model.pth")
+
+    def save_metrics(self, train_acc, valid_acc, train_loss, valid_loss):
+        column_names = ["Train_Acc", "Valid_Acc", "Train_Loss", "Valid_Loss"]
+        data = [train_acc, valid_acc,  train_loss, valid_loss]
+
+        with open(f'{self.base_folder}/metrics.csv', 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(column_names)
+            for row in zip(*data):
+                writer.writerow(row)
 
     def save_plots(self, train_acc, valid_acc, train_loss, valid_loss):
         """

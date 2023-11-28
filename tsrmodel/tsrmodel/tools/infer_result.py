@@ -76,7 +76,7 @@ class Result:
         #if self.top_prob < self.confthre:
             # set to number of classes (=last index)
         #    self.class_idx = len(self.cls_names)-1
-        if self.top_probs[0] < 0.90 or self.top_probs[1] > 0.05:  # (1-confthre)/2
+        if self.top_probs[0] < self.confthre or self.top_probs[1] > 0.1:  # (1-confthre)/2
             # set to number of classes (=last index)
             self.class_idx = len(self.cls_names)-1
             self.class_str = self.cls_names[self.class_idx]

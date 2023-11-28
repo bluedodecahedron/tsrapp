@@ -22,8 +22,8 @@ def authenticate(request):
 async def offer(request, offer_schema: OfferSchema):
     # Cannot use standard auth method because method is declared async (will error)
     # Handle authentication manually
-    if not await sync_to_async(authenticate)(request):
-        return 401, {'detail': 'Unauthorized'}
+    #if not await sync_to_async(authenticate)(request):
+    #    return 401, {'detail': 'Unauthorized'}
     requestLogger.info('offer', extra={'request': request})
     return 200, await server.offer(offer_schema)
 

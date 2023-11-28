@@ -139,7 +139,7 @@ class_correct = list(0. for i in range(len(class_names)))
 class_total = list(0. for i in range(len(class_names)))
 
 for i, image_path in enumerate(images):
-    if i > 1000:
+    if i > 100000:
         break
     # Read the image.
     image = cv2.imread(image_path)
@@ -172,7 +172,7 @@ for i, image_path in enumerate(images):
             class_correct[gt_idx] += 1
         class_total[gt_idx] += 1
     # Generate class activation mapping for the top1 prediction.
-    CAMs = returnCAM(features_blobs[0], weight_softmax, class_idx)
+    CAMs = returnCAM(features_blobs[-1], weight_softmax, class_idx)
     # File name to save the resulting CAM image with.
     save_name = f"{image_path.split('/')[-1].split('.')[0]}"
     # Show and save the results.

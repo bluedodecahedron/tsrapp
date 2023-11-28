@@ -9,4 +9,5 @@ outputs/*
 tsrmodel/tools/__pycache__
 tsrmodel/__pychache__
 tsrmodel/tsrmodel/__pychache__
+tsrmodel/__pycache__/
 train/__pycache__

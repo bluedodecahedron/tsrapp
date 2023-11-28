@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from train.datasets import get_datasets, get_data_loaders
 import albumentations as A
 import torch
+from train.utils import Saver
 
 all_images = glob.glob('../../input/GTSRB_Final_Test_Images/GTSRB/Final_Test/Images/*.ppm')
 sub_images = glob.glob('../../input/GTSRB_Final_Training_Images/GTSRB/Final_Training/Images/00001/*.ppm')
@@ -102,11 +103,14 @@ class TesTAugmentations(TestCase):
                     image = images[j].numpy().transpose(1, 2, 0)
                     image = transform(image=image)['image']
                     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                    if labels[j][57] == 1.0:
-                        cv2.imshow('Image', image)
-                        cv2.waitKey(0)
+                    #if labels[j][57] == 1.0:
+                    #    cv2.imshow('Image', image)
+                    #    cv2.waitKey(0)
+                    cv2.imshow('Image', image)
+                    cv2.waitKey(0)
                     continue
         cv2.destroyAllWindows()
+
 
 class TestModel(TestCase):
     def setUp(self) -> None:
@@ -142,3 +146,8 @@ class TestModel(TestCase):
                 min_value = torch.min(param)
         print(f'Max parameter value: {max_value}, Min parameter value: {min_value}')
 
+
+class TestUtils(TestCase):
+    def test_save_metrics(self):
+        saver = Saver("../../outputs/models")
+        saver.save_metrics([0.3, 0.3], [0.1, 0.1], [0.2, 0.2], [0.4, 0.4])

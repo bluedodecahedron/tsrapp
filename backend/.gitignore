@@ -17,6 +17,7 @@ backend/public_hosts.txt
 resources/gtsdb_best_ckpt.pth
 resources/model.pth
 resources/videos
+resources/model_original.pth
 
 gtsdb_best_ckpt_old.pth
 app/apps/bla

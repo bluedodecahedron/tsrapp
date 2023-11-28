@@ -75,8 +75,8 @@ class VideoTestCase(TestCase):
     vid_dir = 'resources/videos'
     vid1 = 'Zurich_back_highway_parking_street.mp4'
     vid2 = 'Zurich_sun.mp4'
-    vid3 = 'Inssi Dashcam Footage.mp4'
-    vid4 = 'Inssi short.mp4'
+    vid3 = 'malmi_ajovama.mp4'
+    vid4 = 'malmi_ajovama_short.mp4'
 
     def resize(self, image):
         height, width, _ = image.shape

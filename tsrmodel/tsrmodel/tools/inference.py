@@ -51,7 +51,7 @@ class Predictor:
     def preprocess(self, img):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         # downscale image
-        img = cv2.resize(img, (60, 60))
+        img = cv2.resize(img, (30, 30))
         img = cv2.resize(img, (224, 224))
         # use some augmentations that were used during training
         # size = 4

@@ -225,6 +225,8 @@ class CustomImageFolderDataset(datasets.ImageFolder):
         image, label = super().__getitem__(idx)
         num_classes = len(self.classes)
 
+        tmp_label = label
+
         # Flip Image horizontal for images where it's possible
         if label not in [0, 1, 2, 3, 4, 5, 6, 7, 8, 14, 19, 20, 33, 34, 36, 37, 38, 39, 43, 44, 46, 47]:
             flip = A.Compose([
@@ -258,15 +260,30 @@ class CustomImageFolderDataset(datasets.ImageFolder):
         if p < self.mix_up_p:
             mixup_idx = random.randint(0, self.__len__() - 1)
             mixup_image, mixup_label = super().__getitem__(mixup_idx)
+            tmp_mixup_label = mixup_label
 
             mixup_label = torch.zeros(num_classes)
             mixup_label[self.targets[mixup_idx]] = 1
+
+            orig_image = image
 
             # Select a random number from the given beta distribution
             # Mixup the images accordingly
             lam = np.random.beta(self.mix_up_alpha, self.mix_up_alpha)
             image = lam * image + (1 - lam) * mixup_image
             label = lam * label + (1 - lam) * mixup_label
+
+            if False: #0.8 > lam > 0.2:
+                print(f"lam: {lam}, label: {tmp_label}, mixuplabel: {tmp_mixup_label}")
+                # orig_image = cv2.resize(image, (RESIZE_TO, RESIZE_TO))
+                img_concat = cv2.hconcat([
+                    cv2.normalize(cv2.cvtColor(orig_image.numpy().transpose(1, 2, 0), cv2.COLOR_RGB2BGR), None, 0, 1.0, cv2.NORM_MINMAX),
+                    cv2.normalize(cv2.cvtColor(mixup_image.numpy().transpose(1, 2, 0), cv2.COLOR_RGB2BGR), None, 0, 1.0, cv2.NORM_MINMAX),
+                    cv2.normalize(cv2.cvtColor(image.numpy().transpose(1, 2, 0), cv2.COLOR_RGB2BGR), None, 0, 1.0, cv2.NORM_MINMAX),
+                ])
+                # shows wrong colors because of normalization, pls fix
+                cv2.imshow('Result', img_concat)
+                cv2.waitKey(0)
 
         return image, label
 
@@ -280,8 +297,8 @@ def get_datasets(root=ROOT_DIR):
     """
     aug_config = {
         'transform': (TrainTransforms()),
-        'mix_up_p': 0.0,
-        'mix_up_alpha': 0.1,
+        'mix_up_p': 1.0,
+        'mix_up_alpha': 0.3,
         'horizontal_flip_p': 0.4,
     }
 

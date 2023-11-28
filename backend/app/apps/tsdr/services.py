@@ -23,7 +23,7 @@ TSD_MODEL = 'resources/gtsdb_best_ckpt.pth'
 TSR_MODEL = 'resources/model.pth'
 CLASS_NAMES = 'resources/signnames.csv'
 TSD_CONFIDENCE = 0.75
-TSR_CONFIDENCE = 0.8
+TSR_CONFIDENCE = 0.75
 TSR_MAX_WORKERS = 5
 
 VIDEO_OUTPUT_ROOT = 'storage/videos'

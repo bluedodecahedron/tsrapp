@@ -37,7 +37,7 @@ def build_model(model='efficientnet_b0', pretrained=True, fine_tune=False, num_c
         model = models.mobilenet_v3_large(weights=models.MobileNet_V3_Large_Weights.DEFAULT)
         model.classifier[3] = nn.Linear(in_features=1280, out_features=num_classes)
 
-    model.features.register_forward_hook(lambda m, inp, out: F.dropout(out, p=0.5, training=m.training))
+    model.features.register_forward_hook(lambda m, inp, out: F.dropout(out, p=0.2, training=m.training))
 
     if fine_tune:
         print('[INFO]: Fine-tuning all layers...')

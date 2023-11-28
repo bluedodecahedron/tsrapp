@@ -169,6 +169,7 @@ def train_hyper():
             saver.save_model(epoch, model, optimizer, criterion)
         # Save the loss and accuracy plots.
         saver.save_plots(train_acc, valid_acc, train_loss, valid_loss)
+        saver.save_metrics(train_acc, valid_acc, train_loss, valid_loss)
     print('TRAINING COMPLETE')
 
 
@@ -203,7 +204,7 @@ if __name__ == '__main__':
     for key, value in config.items():
         print(f"{key}: {value}")
 
-    saver = Saver()
+    saver = Saver("../outputs/models")
     saver.save_parameters(config)
     saver.save_augmentations(aug_config)
 
