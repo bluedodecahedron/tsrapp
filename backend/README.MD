@@ -20,16 +20,22 @@ The following major technologies are used:
 
 ### 2. Download server resources
 
-The backend server uses pytorch models for its TSDR purposes. Some automated tests in the backend project also require additional images that are too large for a git repository. Download the needed resources from the following Google Drive:
+The backend uses PyTorch models to do TSDR. They are too large for the git repository, but are available at:
+https://drive.google.com/file/d/18sMf4xfe4xuGgkK416ua1UyS2bdPjP76/view?usp=sharing
 
-https://drive.google.com/file/d/1WNN6ZGW7hNsqLFhdUfXgoK0WARX4uxIY/view?usp=sharing
+The files need to be added to the folder `backend/resources`. The application will not work without them.
 
-Add the files into the folder backend/resources.
+If you want to run the validation tests in the backend, you will need additional images and videos (7GB):
+[missing]
+
+Add them to `backend/resources`. The validation files are NOT necessary for the application to work.
 
 ### 3. Execute tests
 
 Make sure that TSDR inference works by executing all tests in the file `backend/app/apps/tsdr/tests.py`.
 Some cv2 figures might pop up, which can be closed by pressing any key.
+
+The file `backend/app/apps/tsdr/validation.py` can be used to perform TSDR validation on a test set and multiple videos. Keep in mind that processing the videos takes quite long (2 or 3 hours).
 
 ### 4. Build database
 
@@ -58,9 +64,11 @@ into the folder backend/backend containing that address. More than one can be ad
 
 ### 7. Open network ports
 
+The port on which the application runs needs to be opened if the application is used outside the local network.
+
 In WebRTC, public TURN servers are used to exchange ice candidates between peers. The TURN protocol uses certain network ports to do this.
-Depending on the type of connection, these ports may need to be opened for it to work. 
-In most cases, this should not be necessary. If exchanging ice candidates fails however, opening these ports may help.
+Depending on the type of connection, these ports may need to be opened as well for it to work. 
+In most cases, this should NOT be necessary. If exchanging ice candidates fails however, opening these ports may help.
 
 ```UDP ports 49152-65535```
 
