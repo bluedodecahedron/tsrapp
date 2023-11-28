@@ -25,11 +25,6 @@ https://drive.google.com/file/d/18sMf4xfe4xuGgkK416ua1UyS2bdPjP76/view?usp=shari
 
 The files need to be added to the folder `backend/resources`. The application will not work without them.
 
-If you want to run the validation tests in the backend, you will need additional images and videos (7GB):
-[missing]
-
-Add them to `backend/resources`. The validation files are NOT necessary for the application to work.
-
 ### 3. Execute tests
 
 Make sure that TSDR inference works by executing all tests in the file `backend/app/apps/tsdr/tests.py`.
@@ -117,6 +112,13 @@ To send a video stream for detection to the backend from the local computer, ope
 This should open an html page containing a javascript implementation of webrtc ([source](https://github.com/aiortc/aiortc/blob/main/examples/server/client.js)). 
 A stream can be sent to the backend through choosing either a real or a virtual camera (such as the one from OBS). 
 Keep in mind that media permissions need to be enabled in the browser settings for this to work since most browsers nowadays don't allow http websites to use usermedia.
+
+### 3. Validation
+
+If you want to run the validation tests in the backend, you will need additional images and videos (7GB):
+[missing]
+
+Add them to `backend/resources`. The validation files are NOT necessary for the application to work.
 
 ### API Doc
 
